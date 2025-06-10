@@ -2,7 +2,8 @@ import { CreepRole, IRepository } from "./repository";
 
 export enum HarvesterState {
   Harvesting = "harvesting",
-  transferring = "transferring"
+  Transferring = "transferring",
+  Recycling = "recycling"
 }
 
 export interface HarvesterCreep extends Creep {

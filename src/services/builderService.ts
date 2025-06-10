@@ -1,20 +1,108 @@
-import { BuilderCreep } from "repositories/builderRepository";
-import { IService, TSpawnCreepResponse } from "./service";
-
-class BuilderService implements IService<BuilderCreep> {
-  execute(creep: BuilderCreep): void {
-    throw new Error("Method not implemented.");
+import { BuilderCreep, BuilderMemory, builderRepository, BuilderState } from "repositories/builderRepository";
+import { ABaseService, IService, TSpawnCreepResponse } from "./service";
+import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { IRepository } from "repositories/repository";
+import { recordCountToArray } from "utils";
+class BuilderService extends ABaseService<BuilderCreep> {
+  MAX_CREEPS = 0;
+  public constructor(private builderRepository: IRepository<BuilderCreep>) {
+    super(builderRepository);
   }
 
-  getCreeps(spawn: StructureSpawn): BuilderCreep[] {
-    throw new Error("Method not implemented.");
+  override execute(builder: BuilderCreep): void {
+    this.updateBuilderState(builder);
+    this.executeBuilderState(builder);
   }
 
-  needMoreCreeps(spawn: StructureSpawn): boolean {
-    throw new Error("Method not implemented.");
+  override needMoreCreeps(spawn: StructureSpawn): boolean {
+    const creepCount = this.builderRepository.countCreepsInSpawn(spawn.id);
+    return creepCount < this.MAX_CREEPS;
   }
 
-  spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    throw new Error("Method not implemented.");
+  override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
+    const harvesterName = `builder-${spawn.name}-${this.builderRepository.countCreepsInSpawn(spawn.id)}`;
+
+    const bodyParts: Partial<Record<CreepBodyPart, number>> = {
+      [CreepBodyPart.Work]: 3,
+      [CreepBodyPart.Carry]: 1,
+      [CreepBodyPart.Move]: 2
+    };
+    const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
+      memory: { role: CreepRole.Builder, spawnId: spawn.id, state: BuilderState.Building } as BuilderMemory
+    });
+
+    return res as TSpawnCreepResponse;
+  }
+
+  private updateBuilderState(creep: BuilderCreep): void {
+    switch (creep.memory.state) {
+      case BuilderState.Building:
+        if (creep.store.getFreeCapacity() === creep.store.getCapacity()) {
+          creep.memory.state = BuilderState.Collecting;
+        }
+        break;
+      case BuilderState.Collecting:
+        if (creep.store.getFreeCapacity() === 0) {
+          creep.memory.state = BuilderState.Building;
+        }
+        break;
+      default:
+        creep.memory.state = BuilderState.Building;
+    }
+  }
+
+  private executeBuilderState(creep: BuilderCreep): void {
+    switch (creep.memory.state) {
+      case BuilderState.Building:
+        this.doBuild(creep);
+        break;
+      case BuilderState.Collecting:
+        this.doCollect(creep);
+        break;
+    }
+  }
+
+  private doBuild(creep: BuilderCreep): void {
+    const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES, {
+      filter: site => {
+        switch (site.structureType) {
+          case STRUCTURE_EXTENSION:
+          case STRUCTURE_SPAWN:
+          case STRUCTURE_TOWER:
+          case STRUCTURE_ROAD:
+            return true;
+          default:
+            return false;
+        }
+      }
+    });
+    if (!target) return;
+
+    const buildErr = creep.build(target);
+
+    switch (buildErr) {
+      case ERR_NOT_IN_RANGE:
+        this.move(creep, target);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private doCollect(creep: BuilderCreep): void {
+    const target = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
+    if (!target) return;
+
+    const harvestErr = creep.harvest(target);
+
+    switch (harvestErr) {
+      case ERR_NOT_IN_RANGE:
+        this.move(creep, target);
+        break;
+      default:
+        break;
+    }
   }
 }
+
+export const builderService = new BuilderService(builderRepository);

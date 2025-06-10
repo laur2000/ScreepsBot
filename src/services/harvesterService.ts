@@ -1,46 +1,54 @@
 import { HarvesterCreep, HarvesterMemory, harvesterRepository, HarvesterState } from "repositories/harvesterRepository";
-import { IService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { ABaseService, IService, TSpawnCreepResponse } from "./service";
+import { CreepBodyPart, CreepRole, IRepository } from "repositories/repository";
 import { harvesterPathStyle } from "utils/pathStyles";
+import { recordCountToArray } from "utils";
 
-class HarvesterService implements IService<HarvesterCreep> {
-  MAX_CREEPS = 5;
+class HarvesterService extends ABaseService<HarvesterCreep> {
+  constructor(private harvesterRepository: IRepository<HarvesterCreep>) {
+    super(harvesterRepository);
+  }
+  MAX_CREEPS = 0;
   needMoreCreeps(spawn: StructureSpawn): boolean {
-    const creepCount = harvesterRepository.countCreepsInSpawn(spawn.id);
+    const creepCount = this.harvesterRepository.countCreepsInSpawn(spawn.id);
     return creepCount < this.MAX_CREEPS;
   }
 
-  spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    const harvesterName = `harvester-${spawn.name}-${harvesterRepository.countCreepsInSpawn(spawn.id)}`;
-
-    const res = spawn.spawnCreep([CreepBodyPart.Work, CreepBodyPart.Carry, CreepBodyPart.Move], harvesterName, {
+  override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
+    const harvesterName = `harvester-${spawn.name}-${this.harvesterRepository.countCreepsInSpawn(spawn.id)}`;
+    const bodyParts: Partial<Record<CreepBodyPart, number>> = {
+      [CreepBodyPart.Work]: 4,
+      [CreepBodyPart.Carry]: 1,
+      [CreepBodyPart.Move]: 2
+    };
+    const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
       memory: { role: CreepRole.Harvester, spawnId: spawn.id, state: HarvesterState.Harvesting } as HarvesterMemory
     });
 
     return res as TSpawnCreepResponse;
   }
 
-  execute(harvester: HarvesterCreep): void {
+  override execute(harvester: HarvesterCreep): void {
     this.updateHarvesterState(harvester);
     this.executeHarvesterState(harvester);
-  }
-
-  getCreeps(spawn: StructureSpawn): HarvesterCreep[] {
-    return harvesterRepository.getCreeps(spawn.id);
   }
 
   private updateHarvesterState(creep: HarvesterCreep): void {
     switch (creep.memory.state) {
       case HarvesterState.Harvesting:
         if (creep.store.getFreeCapacity() === 0) {
-          creep.memory.state = HarvesterState.transferring;
+          creep.memory.state = HarvesterState.Transferring;
         }
         break;
-      case HarvesterState.transferring:
+      case HarvesterState.Transferring:
         if (creep.store.getFreeCapacity() === creep.store.getCapacity()) {
           creep.memory.state = HarvesterState.Harvesting;
         }
         break;
+      case HarvesterState.Recycling:
+        break;
+      default:
+        creep.memory.state = HarvesterState.Harvesting;
     }
   }
 
@@ -49,11 +57,15 @@ class HarvesterService implements IService<HarvesterCreep> {
       case HarvesterState.Harvesting:
         this.doHarvest(creep);
         break;
-      case HarvesterState.transferring:
+      case HarvesterState.Transferring:
         this.doTransfer(creep);
+        break;
+      case HarvesterState.Recycling:
+        this.doRecycle(creep);
         break;
     }
   }
+
   private doHarvest(harvester: HarvesterCreep): void {
     const target = harvester.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
     if (!target) return;
@@ -62,9 +74,7 @@ class HarvesterService implements IService<HarvesterCreep> {
 
     switch (harvestErr) {
       case ERR_NOT_IN_RANGE:
-        harvester.moveTo(target, {
-          visualizePathStyle: harvesterPathStyle
-        });
+        this.move(harvester, target);
         break;
       default:
         break;
@@ -93,14 +103,33 @@ class HarvesterService implements IService<HarvesterCreep> {
 
     switch (transferErr) {
       case ERR_NOT_IN_RANGE:
-        creep.moveTo(target, {
-          visualizePathStyle: harvesterPathStyle
-        });
+        this.move(creep, target);
         break;
       default:
         break;
     }
   }
+
+  protected override move(creep: HarvesterCreep, target: RoomPosition | { pos: RoomPosition }) {
+    const roadExists = creep.pos.look().some(tile => {
+      switch (tile.type) {
+        case LOOK_CONSTRUCTION_SITES:
+          return tile.constructionSite?.structureType === STRUCTURE_ROAD;
+        case LOOK_STRUCTURES:
+          return tile.structure?.structureType === STRUCTURE_ROAD;
+        default:
+          return false;
+      }
+    });
+
+    if (!roadExists) {
+      creep.pos.createConstructionSite(STRUCTURE_ROAD);
+    }
+
+    creep.moveTo(target, {
+      visualizePathStyle: harvesterPathStyle
+    });
+  }
 }
 
-export const harvesterService = new HarvesterService();
+export const harvesterService = new HarvesterService(harvesterRepository);

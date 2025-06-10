@@ -1,7 +1,7 @@
 import { CreepRole, IRepository } from "./repository";
 
 export enum BuilderState {
-  Harvesting = "building",
+  Building = "building",
   Collecting = "collecting"
 }
 

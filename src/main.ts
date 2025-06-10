@@ -1,3 +1,5 @@
+import { builderController } from "controllers/builderController";
+import { garbageCollectorController } from "controllers/garbageCollectorController";
 import { harvesterController } from "controllers/harvesterController";
 import { ErrorMapper } from "utils/ErrorMapper";
 
@@ -32,4 +34,6 @@ declare global {
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
   harvesterController.run();
+  builderController.run();
+  garbageCollectorController.run();
 });

@@ -1,21 +1,28 @@
-import { HarvesterCreep, HarvesterMemory, harvesterRepository, HarvesterState } from "repositories/harvesterRepository";
+import {
+  HarvesterCreep,
+  HarvesterMemory,
+  harvesterRepository,
+  HarvesterState,
+  IHarvesterRepository
+} from "repositories/harvesterRepository";
 import { ABaseService, IService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole, IRepository } from "repositories/repository";
 import { harvesterPathStyle } from "utils/pathStyles";
-import { recordCountToArray } from "utils";
+import { getUniqueId, recordCountToArray } from "utils";
 
 class HarvesterService extends ABaseService<HarvesterCreep> {
-  constructor(private harvesterRepository: IRepository<HarvesterCreep>) {
+  constructor(private harvesterRepository: IHarvesterRepository) {
     super(harvesterRepository);
   }
-  MAX_CREEPS = 0;
+  MAX_CREEPS = 4;
+  MAX_CREEPS_PER_SOURCE = 2;
   needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.harvesterRepository.countCreepsInSpawn(spawn.id);
     return creepCount < this.MAX_CREEPS;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    const harvesterName = `harvester-${spawn.name}-${this.harvesterRepository.countCreepsInSpawn(spawn.id)}`;
+    const harvesterName = `harvester-${spawn.name}-${getUniqueId()}`;
     const bodyParts: Partial<Record<CreepBodyPart, number>> = {
       [CreepBodyPart.Work]: 4,
       [CreepBodyPart.Carry]: 1,
@@ -29,6 +36,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
   }
 
   override execute(harvester: HarvesterCreep): void {
+    this.assignSource(harvester);
     this.updateHarvesterState(harvester);
     this.executeHarvesterState(harvester);
   }
@@ -66,8 +74,25 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
     }
   }
 
+  private assignSource(creep: HarvesterCreep): void {
+    if (creep.memory.harvestTargetId) return;
+
+    const sourcesCount = this.harvesterRepository.countCreepsBySource();
+    const sources = creep.room.find(FIND_SOURCES, {
+      filter: source => {
+        const count = sourcesCount[source.id] || 0;
+        return count < this.MAX_CREEPS_PER_SOURCE;
+      }
+    });
+
+    if (sources[0]) {
+      creep.memory.harvestTargetId = sources[0].id;
+    }
+  }
+
   private doHarvest(harvester: HarvesterCreep): void {
-    const target = harvester.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
+    if (!harvester.memory.harvestTargetId) return;
+    const target = Game.getObjectById(harvester.memory.harvestTargetId) as Source | Deposit | Mineral;
     if (!target) return;
 
     const harvestErr = harvester.harvest(target);
@@ -85,12 +110,9 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
     const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
       filter: structure => {
         switch (structure.structureType) {
+          case STRUCTURE_CONTAINER:
           case STRUCTURE_EXTENSION:
-          case STRUCTURE_SPAWN:
-          case STRUCTURE_TOWER:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-          case STRUCTURE_CONTROLLER:
-            return true;
           default:
             return false;
         }
@@ -108,27 +130,6 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
       default:
         break;
     }
-  }
-
-  protected override move(creep: HarvesterCreep, target: RoomPosition | { pos: RoomPosition }) {
-    const roadExists = creep.pos.look().some(tile => {
-      switch (tile.type) {
-        case LOOK_CONSTRUCTION_SITES:
-          return tile.constructionSite?.structureType === STRUCTURE_ROAD;
-        case LOOK_STRUCTURES:
-          return tile.structure?.structureType === STRUCTURE_ROAD;
-        default:
-          return false;
-      }
-    });
-
-    if (!roadExists) {
-      creep.pos.createConstructionSite(STRUCTURE_ROAD);
-    }
-
-    creep.moveTo(target, {
-      visualizePathStyle: harvesterPathStyle
-    });
   }
 }
 

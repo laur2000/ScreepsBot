@@ -2,7 +2,8 @@ export enum CreepRole {
   Harvester = "harvester",
   Soldier = "soldier",
   Turret = "turret",
-  Builder = "builder"
+  Builder = "builder",
+  Transporter = "transporter"
 }
 
 export enum CreepBodyPart {
@@ -16,11 +17,7 @@ export enum CreepBodyPart {
   Claim = "claim"
 }
 
-
-export interface IRepository<T extends Creep>{
+export interface IRepository<T extends Creep> {
   countCreepsInSpawn(spawn: string): number;
-  getCreeps(spawnId: string): T[]
+  getCreeps(spawnId: string): T[];
 }
-
-
-

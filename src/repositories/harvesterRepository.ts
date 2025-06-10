@@ -14,9 +14,14 @@ export interface HarvesterMemory {
   role: CreepRole.Harvester;
   spawnId: string;
   state: HarvesterState;
+  harvestTargetId?: string | null;
 }
 
-export class HarvesterRepository implements IRepository<HarvesterCreep> {
+export interface IHarvesterRepository extends IRepository<HarvesterCreep> {
+  countCreepsBySource(): Record<string, number>;
+}
+
+export class HarvesterRepository implements IHarvesterRepository {
   countCreepsInSpawn(spawnId: string): number {
     return Object.values(Game.creeps).filter(
       (creep: Creep) => creep.memory.role === CreepRole.Harvester && creep.memory.spawnId === spawnId
@@ -27,6 +32,18 @@ export class HarvesterRepository implements IRepository<HarvesterCreep> {
     return Object.values(Game.creeps).filter(
       (creep: Creep) => creep.memory.role === CreepRole.Harvester && creep.memory.spawnId === spawnId
     ) as HarvesterCreep[];
+  }
+
+  countCreepsBySource() {
+    return Object.values(Game.creeps)
+      .filter(creep => creep.memory.role === CreepRole.Harvester)
+      .reduce((acc, creep) => {
+        const targetId = creep.memory.harvestTargetId;
+        if (!targetId) return acc;
+
+        acc[targetId] = (acc[targetId] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
   }
 }
 

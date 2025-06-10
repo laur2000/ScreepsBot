@@ -34,8 +34,23 @@ export abstract class ABaseService<T extends Creep> implements IService<T> {
   }
 
   protected move(creep: T, target: RoomPosition | { pos: RoomPosition }): void {
+    const roadExists = creep.pos.look().some(tile => {
+      switch (tile.type) {
+        case LOOK_CONSTRUCTION_SITES:
+          return tile.constructionSite?.structureType === STRUCTURE_ROAD;
+        case LOOK_STRUCTURES:
+          return tile.structure?.structureType === STRUCTURE_ROAD;
+        default:
+          return false;
+      }
+    });
+
+    if (!roadExists) {
+      creep.pos.createConstructionSite(STRUCTURE_ROAD);
+    }
     if (creep.fatigue === 0) {
-      creep.moveTo(target, { visualizePathStyle: pathStyles[creep.memory.role as CreepRole] });
+      // creep.moveTo(target, { visualizePathStyle: pathStyles[creep.memory.role as CreepRole] });
+      creep.travelTo(target);
     }
   }
 

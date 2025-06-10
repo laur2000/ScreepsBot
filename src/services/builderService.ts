@@ -2,9 +2,9 @@ import { BuilderCreep, BuilderMemory, builderRepository, BuilderState } from "re
 import { ABaseService, IService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { IRepository } from "repositories/repository";
-import { recordCountToArray } from "utils";
+import { getUniqueId, recordCountToArray } from "utils";
 class BuilderService extends ABaseService<BuilderCreep> {
-  MAX_CREEPS = 0;
+  MAX_CREEPS = 5;
   public constructor(private builderRepository: IRepository<BuilderCreep>) {
     super(builderRepository);
   }
@@ -20,11 +20,11 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    const harvesterName = `builder-${spawn.name}-${this.builderRepository.countCreepsInSpawn(spawn.id)}`;
+    const harvesterName = `builder-${spawn.name}-${getUniqueId()}`;
 
     const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Work]: 3,
-      [CreepBodyPart.Carry]: 1,
+      [CreepBodyPart.Work]: 2,
+      [CreepBodyPart.Carry]: 2,
       [CreepBodyPart.Move]: 2
     };
     const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
@@ -67,8 +67,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
       filter: site => {
         switch (site.structureType) {
           case STRUCTURE_EXTENSION:
-          case STRUCTURE_SPAWN:
-          case STRUCTURE_TOWER:
+          case STRUCTURE_CONTAINER:
           case STRUCTURE_ROAD:
             return true;
           default:
@@ -90,10 +89,12 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   private doCollect(creep: BuilderCreep): void {
-    const target = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
+    const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+      filter: structure => structure.structureType === STRUCTURE_CONTAINER
+    });
     if (!target) return;
 
-    const harvestErr = creep.harvest(target);
+    const harvestErr = creep.withdraw(target, RESOURCE_ENERGY);
 
     switch (harvestErr) {
       case ERR_NOT_IN_RANGE:

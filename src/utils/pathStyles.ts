@@ -12,9 +12,14 @@ export const soldierPathStyle: PolyStyle = {
   stroke: "red"
 };
 
+export const transporterPathStyle: PolyStyle = {
+  stroke: "blue"
+};
+
 export const pathStyles: Record<CreepRole, PolyStyle> = {
   [CreepRole.Harvester]: harvesterPathStyle,
   [CreepRole.Builder]: builderPathStyle,
   [CreepRole.Soldier]: soldierPathStyle,
-  [CreepRole.Turret]: soldierPathStyle
+  [CreepRole.Turret]: soldierPathStyle,
+  [CreepRole.Transporter]: transporterPathStyle
 };

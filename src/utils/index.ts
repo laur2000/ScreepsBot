@@ -8,3 +8,7 @@ export function recordCountToArray<T extends string | number | symbol>(record: P
   }
   return res;
 }
+
+export function getUniqueId() {
+  return Math.random().toString(32).substring(2);
+}

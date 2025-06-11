@@ -5,9 +5,8 @@ import {
   HarvesterState,
   IHarvesterRepository
 } from "repositories/harvesterRepository";
-import { ABaseService, IService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole, IRepository } from "repositories/repository";
-import { harvesterPathStyle } from "utils/pathStyles";
+import { ABaseService, TSpawnCreepResponse } from "./service";
+import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 
 class HarvesterService extends ABaseService<HarvesterCreep> {
@@ -16,6 +15,8 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
   }
   MAX_CREEPS = 4;
   MAX_CREEPS_PER_SOURCE = 2;
+  MIN_CREEPS_TTL = 60;
+
   needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.harvesterRepository.countCreepsInSpawn(spawn.id);
     return creepCount < this.MAX_CREEPS;
@@ -58,6 +59,10 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
       default:
         creep.memory.state = HarvesterState.Harvesting;
     }
+
+    if ((creep.ticksToLive || this.MIN_CREEPS_TTL) < this.MIN_CREEPS_TTL) {
+      creep.memory.state = HarvesterState.Recycling;
+    }
   }
 
   private executeHarvesterState(creep: HarvesterCreep): void {
@@ -94,16 +99,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
     if (!harvester.memory.harvestTargetId) return;
     const target = Game.getObjectById(harvester.memory.harvestTargetId) as Source | Deposit | Mineral;
     if (!target) return;
-
-    const harvestErr = harvester.harvest(target);
-
-    switch (harvestErr) {
-      case ERR_NOT_IN_RANGE:
-        this.move(harvester, target);
-        break;
-      default:
-        break;
-    }
+    this.actionOrMove(harvester, () => harvester.harvest(target), target);
   }
 
   private doTransfer(creep: HarvesterCreep): void {
@@ -113,6 +109,8 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
           case STRUCTURE_CONTAINER:
           case STRUCTURE_EXTENSION:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+          case STRUCTURE_CONTROLLER:
+            return true;
           default:
             return false;
         }
@@ -121,15 +119,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
 
     if (!target) return;
 
-    const transferErr = creep.transfer(target, RESOURCE_ENERGY);
-
-    switch (transferErr) {
-      case ERR_NOT_IN_RANGE:
-        this.move(creep, target);
-        break;
-      default:
-        break;
-    }
+    this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
   }
 }
 

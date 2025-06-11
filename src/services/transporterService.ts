@@ -10,6 +10,7 @@ import { IRepository } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 class TransporterService extends ABaseService<TransporterCreep> {
   MAX_CREEPS = 2;
+  MIN_CREEPS_TTL = 60;
   public constructor(private transporterRepository: IRepository<TransporterCreep>) {
     super(transporterRepository);
   }
@@ -25,13 +26,13 @@ class TransporterService extends ABaseService<TransporterCreep> {
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    const harvesterName = `transporter-${spawn.name}-${getUniqueId()}`;
+    const name = `transporter-${spawn.name}-${getUniqueId()}`;
 
     const bodyParts: Partial<Record<CreepBodyPart, number>> = {
       [CreepBodyPart.Carry]: 3,
       [CreepBodyPart.Move]: 3
     };
-    const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
+    const res = spawn.spawnCreep(recordCountToArray(bodyParts), name, {
       memory: {
         role: CreepRole.Transporter,
         spawnId: spawn.id,
@@ -54,8 +55,14 @@ class TransporterService extends ABaseService<TransporterCreep> {
           creep.memory.state = TransporterState.Transferring;
         }
         break;
+      case TransporterState.Recycling:
+        break;
       default:
         creep.memory.state = TransporterState.Collecting;
+    }
+
+    if ((creep.ticksToLive || this.MIN_CREEPS_TTL) < this.MIN_CREEPS_TTL) {
+      creep.memory.state = TransporterState.Recycling;
     }
   }
 
@@ -66,6 +73,9 @@ class TransporterService extends ABaseService<TransporterCreep> {
         break;
       case TransporterState.Collecting:
         this.doCollect(creep);
+        break;
+      case TransporterState.Recycling:
+        this.doRecycle(creep);
         break;
     }
   }
@@ -78,41 +88,34 @@ class TransporterService extends ABaseService<TransporterCreep> {
           case STRUCTURE_SPAWN:
           case STRUCTURE_TOWER:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-          case STRUCTURE_CONTROLLER:
-            return true;
           default:
             return false;
         }
       }
     });
     if (!target) return;
-
-    const transferErr = creep.transfer(target, RESOURCE_ENERGY);
-
-    switch (transferErr) {
-      case ERR_NOT_IN_RANGE:
-        this.move(creep, target);
-        break;
-      default:
-        break;
-    }
+    this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
   }
 
   private doCollect(creep: TransporterCreep): void {
-    const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-      filter: structure => structure.structureType === STRUCTURE_CONTAINER
+    const tombstone = creep.pos.findClosestByRange(FIND_TOMBSTONES, {
+      filter: tombstone => tombstone.store.getUsedCapacity(RESOURCE_ENERGY) > 0
     });
+
+    const target =
+      tombstone ||
+      creep.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: structure => {
+          switch (structure.structureType) {
+            case STRUCTURE_CONTAINER:
+              return structure.store.getFreeCapacity(RESOURCE_ENERGY) !== structure.store.getCapacity(RESOURCE_ENERGY);
+            default:
+              return false;
+          }
+        }
+      });
     if (!target) return;
-
-    const harvestErr = creep.withdraw(target, RESOURCE_ENERGY);
-
-    switch (harvestErr) {
-      case ERR_NOT_IN_RANGE:
-        this.move(creep, target);
-        break;
-      default:
-        break;
-    }
+    this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
   }
 }
 

@@ -1,5 +1,4 @@
-import { CreepRole, IRepository } from "repositories/repository";
-import { pathStyles } from "utils/pathStyles";
+import { IRepository } from "repositories/repository";
 
 export type TSpawnCreepResponse =
   | OK
@@ -33,21 +32,29 @@ export abstract class ABaseService<T extends Creep> implements IService<T> {
     }
   }
 
-  protected move(creep: T, target: RoomPosition | { pos: RoomPosition }): void {
-    const roadExists = creep.pos.look().some(tile => {
-      switch (tile.type) {
-        case LOOK_CONSTRUCTION_SITES:
-          return tile.constructionSite?.structureType === STRUCTURE_ROAD;
-        case LOOK_STRUCTURES:
-          return tile.structure?.structureType === STRUCTURE_ROAD;
-        default:
-          return false;
-      }
-    });
-
-    if (!roadExists) {
-      creep.pos.createConstructionSite(STRUCTURE_ROAD);
+  protected actionOrMove(creep: T, action: () => ScreepsReturnCode, target: RoomPosition | HasPos): ScreepsReturnCode {
+    const result = action();
+    if (result === ERR_NOT_IN_RANGE) {
+      this.move(creep, target);
     }
+    return result;
+  }
+
+  protected move(creep: T, target: RoomPosition | HasPos): void {
+    // const roadExists = creep.pos.look().some(tile => {
+    //   switch (tile.type) {
+    //     case LOOK_CONSTRUCTION_SITES:
+    //       return tile.constructionSite?.structureType === STRUCTURE_ROAD;
+    //     case LOOK_STRUCTURES:
+    //       return tile.structure?.structureType === STRUCTURE_ROAD;
+    //     default:
+    //       return false;
+    //   }
+    // });
+
+    // if (!roadExists) {
+    //   creep.pos.createConstructionSite(STRUCTURE_ROAD);
+    // }
     if (creep.fatigue === 0) {
       // creep.moveTo(target, { visualizePathStyle: pathStyles[creep.memory.role as CreepRole] });
       creep.travelTo(target);

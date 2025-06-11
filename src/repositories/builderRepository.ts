@@ -2,7 +2,8 @@ import { CreepRole, IRepository } from "./repository";
 
 export enum BuilderState {
   Building = "building",
-  Collecting = "collecting"
+  Collecting = "collecting",
+  Recycling = "recycling"
 }
 
 export interface BuilderCreep extends Creep {

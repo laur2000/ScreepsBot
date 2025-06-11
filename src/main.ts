@@ -2,6 +2,7 @@ import { builderController } from "controllers/builderController";
 import { garbageCollectorController } from "controllers/garbageCollectorController";
 import { harvesterController } from "controllers/harvesterController";
 import { transporterController } from "controllers/transporterController";
+import { turretController } from "controllers/turretController";
 import { ErrorMapper } from "utils/ErrorMapper";
 import "utils/Traveler";
 
@@ -11,5 +12,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
   harvesterController.run();
   builderController.run();
   transporterController.run();
+  turretController.run();
   garbageCollectorController.run();
 });

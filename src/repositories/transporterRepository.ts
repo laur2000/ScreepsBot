@@ -2,7 +2,8 @@ import { CreepRole, IRepository } from "./repository";
 
 export enum TransporterState {
   Transferring = "transferring",
-  Collecting = "collecting"
+  Collecting = "collecting",
+  Recycling = "recycling"
 }
 
 export interface TransporterCreep extends Creep {

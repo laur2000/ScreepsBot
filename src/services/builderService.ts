@@ -5,6 +5,7 @@ import { IRepository } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 class BuilderService extends ABaseService<BuilderCreep> {
   MAX_CREEPS = 5;
+  MIN_CREEPS_TTL = 60;
   public constructor(private builderRepository: IRepository<BuilderCreep>) {
     super(builderRepository);
   }
@@ -24,8 +25,8 @@ class BuilderService extends ABaseService<BuilderCreep> {
 
     const bodyParts: Partial<Record<CreepBodyPart, number>> = {
       [CreepBodyPart.Work]: 2,
-      [CreepBodyPart.Carry]: 2,
-      [CreepBodyPart.Move]: 2
+      [CreepBodyPart.Carry]: 4,
+      [CreepBodyPart.Move]: 4
     };
     const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
       memory: { role: CreepRole.Builder, spawnId: spawn.id, state: BuilderState.Building } as BuilderMemory
@@ -46,8 +47,14 @@ class BuilderService extends ABaseService<BuilderCreep> {
           creep.memory.state = BuilderState.Building;
         }
         break;
+      case BuilderState.Recycling:
+        break;
       default:
         creep.memory.state = BuilderState.Building;
+    }
+
+    if ((creep.ticksToLive || this.MIN_CREEPS_TTL) < this.MIN_CREEPS_TTL) {
+      creep.memory.state = BuilderState.Recycling;
     }
   }
 
@@ -59,6 +66,9 @@ class BuilderService extends ABaseService<BuilderCreep> {
       case BuilderState.Collecting:
         this.doCollect(creep);
         break;
+      case BuilderState.Recycling:
+        this.doRecycle(creep);
+        break;
     }
   }
 
@@ -66,43 +76,35 @@ class BuilderService extends ABaseService<BuilderCreep> {
     const target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES, {
       filter: site => {
         switch (site.structureType) {
-          case STRUCTURE_EXTENSION:
-          case STRUCTURE_CONTAINER:
-          case STRUCTURE_ROAD:
+          default:
             return true;
+        }
+      }
+    });
+    if (!target) {
+      const controller = creep.room.controller;
+      if (!controller) return;
+      this.actionOrMove(creep, () => creep.upgradeController(controller), controller);
+      return;
+    }
+    this.actionOrMove(creep, () => creep.build(target), target);
+  }
+
+  private doCollect(creep: BuilderCreep): void {
+    // TODO: Assign targetId to builder and calculate the energy that will be consumed from the container
+    // for each creep with that target, if the container has enough energy then make it the target for new creeps
+    const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+      filter: structure => {
+        switch (structure.structureType) {
+          case STRUCTURE_CONTAINER:
+            return structure.store.getUsedCapacity(RESOURCE_ENERGY) > 300;
           default:
             return false;
         }
       }
     });
     if (!target) return;
-
-    const buildErr = creep.build(target);
-
-    switch (buildErr) {
-      case ERR_NOT_IN_RANGE:
-        this.move(creep, target);
-        break;
-      default:
-        break;
-    }
-  }
-
-  private doCollect(creep: BuilderCreep): void {
-    const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-      filter: structure => structure.structureType === STRUCTURE_CONTAINER
-    });
-    if (!target) return;
-
-    const harvestErr = creep.withdraw(target, RESOURCE_ENERGY);
-
-    switch (harvestErr) {
-      case ERR_NOT_IN_RANGE:
-        this.move(creep, target);
-        break;
-      default:
-        break;
-    }
+    this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
   }
 }
 

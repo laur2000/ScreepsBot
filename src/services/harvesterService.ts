@@ -107,7 +107,6 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
       filter: structure => {
         switch (structure.structureType) {
           case STRUCTURE_CONTAINER:
-          case STRUCTURE_EXTENSION:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
           case STRUCTURE_CONTROLLER:
             return true;

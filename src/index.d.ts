@@ -50,8 +50,22 @@ interface TravelState {
   cpu: number;
 }
 
+type PriorityFunction<T> = (object: T) => number;
+
+interface PriorityOptions<T extends FindConstant> {
+  priority: PriorityFunction<FindTypes[T]>;
+}
+
+interface Array<T> {
+  flatMap<U>(callback: (value: T, index: number, array: T[]) => U | U[], thisArg?: any): U[];
+}
+
 interface Creep {
   travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): number;
+  findClosestByPriority<T extends FindConstant, S extends FindTypes[T]>(
+    type: T[],
+    opts?: PriorityOptions<T> & FilterOptions<T, S>
+  ): S | null;
 }
 
 type Coord = { x: number; y: number };
@@ -69,7 +83,8 @@ type HasPos = { pos: RoomPosition };
 interface Memory {
   uuid: number;
   log: any;
-  empire: any
+  empire: any;
+  [key: string]: any;
 }
 
 interface CreepMemory {

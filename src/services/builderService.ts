@@ -4,7 +4,7 @@ import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { IRepository } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 class BuilderService extends ABaseService<BuilderCreep> {
-  MAX_CREEPS = 5;
+  MAX_CREEPS = 3;
   MIN_CREEPS_TTL = 60;
   public constructor(private builderRepository: IRepository<BuilderCreep>) {
     super(builderRepository);
@@ -24,9 +24,9 @@ class BuilderService extends ABaseService<BuilderCreep> {
     const harvesterName = `builder-${spawn.name}-${getUniqueId()}`;
 
     const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Work]: 2,
-      [CreepBodyPart.Carry]: 4,
-      [CreepBodyPart.Move]: 4
+      [CreepBodyPart.Work]: 4,
+      [CreepBodyPart.Carry]: 2,
+      [CreepBodyPart.Move]: 3
     };
     const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
       memory: { role: CreepRole.Builder, spawnId: spawn.id, state: BuilderState.Building } as BuilderMemory
@@ -91,13 +91,11 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   private doCollect(creep: BuilderCreep): void {
-    // TODO: Assign targetId to builder and calculate the energy that will be consumed from the container
-    // for each creep with that target, if the container has enough energy then make it the target for new creeps
     const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
       filter: structure => {
         switch (structure.structureType) {
-          case STRUCTURE_CONTAINER:
-            return structure.store.getUsedCapacity(RESOURCE_ENERGY) > 300;
+          case STRUCTURE_STORAGE:
+            return structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
           default:
             return false;
         }

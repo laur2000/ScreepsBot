@@ -9,7 +9,7 @@ class TurretController implements IController {
       const enemies = tower.room.find(FIND_HOSTILE_CREEPS);
       for (const enemy of enemies) {
         tower.attack(enemy);
-        return;
+        continue;
       }
       const structures = tower.room.find(FIND_STRUCTURES, {
         filter: structure => {

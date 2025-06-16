@@ -84,6 +84,12 @@ interface Memory {
   uuid: number;
   log: any;
   empire: any;
+  links: {
+    [key: string]: {
+      targetId?: string;
+      isContainer?: boolean;
+    };
+  };
   [key: string]: any;
 }
 

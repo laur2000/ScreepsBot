@@ -8,18 +8,19 @@ import {
 import { ABaseService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
+import { IFindRepository, findRepository } from "repositories/findRepository";
 
 class HarvesterService extends ABaseService<HarvesterCreep> {
-  constructor(private harvesterRepository: IHarvesterRepository) {
+  constructor(private harvesterRepository: IHarvesterRepository, private findRepository: IFindRepository) {
     super(harvesterRepository);
   }
-  MAX_CREEPS = 4;
   MAX_CREEPS_PER_SOURCE = 2;
   MIN_CREEPS_TTL = 60;
 
   needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.harvesterRepository.countCreepsInSpawn(spawn.id);
-    return creepCount < this.MAX_CREEPS;
+    const sourcesCount = this.findRepository.sourcesCount(spawn.room);
+    return creepCount < sourcesCount * this.MAX_CREEPS_PER_SOURCE;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
@@ -45,7 +46,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
   private updateHarvesterState(creep: HarvesterCreep): void {
     switch (creep.memory.state) {
       case HarvesterState.Harvesting:
-        if (creep.store.getFreeCapacity() === 0) {
+        if (creep.store.getFreeCapacity() < 3) {
           creep.memory.state = HarvesterState.Transferring;
         }
         break;
@@ -81,15 +82,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
 
   private assignSource(creep: HarvesterCreep): void {
     if (creep.memory.harvestTargetId) return;
-
-    const sourcesCount = this.harvesterRepository.countCreepsBySource();
-    const sources = creep.room.find(FIND_SOURCES, {
-      filter: source => {
-        const count = sourcesCount[source.id] || 0;
-        return count < this.MAX_CREEPS_PER_SOURCE;
-      }
-    });
-
+    const sources = this.findRepository.findAvailableSource(creep.room, this.MAX_CREEPS_PER_SOURCE);
     if (sources[0]) {
       creep.memory.harvestTargetId = sources[0].id;
     }
@@ -107,9 +100,8 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
       filter: structure => {
         switch (structure.structureType) {
           case STRUCTURE_CONTAINER:
+          case STRUCTURE_LINK:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-          case STRUCTURE_CONTROLLER:
-            return true;
           default:
             return false;
         }
@@ -122,4 +114,4 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
   }
 }
 
-export const harvesterService = new HarvesterService(harvesterRepository);
+export const harvesterService = new HarvesterService(harvesterRepository, findRepository);

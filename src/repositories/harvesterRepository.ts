@@ -24,7 +24,10 @@ export interface IHarvesterRepository extends IRepository<HarvesterCreep> {
 export class HarvesterRepository implements IHarvesterRepository {
   countCreepsInSpawn(spawnId: string): number {
     return Object.values(Game.creeps).filter(
-      (creep: Creep) => creep.memory.role === CreepRole.Harvester && creep.memory.spawnId === spawnId
+      (creep: Creep) =>
+        creep.memory.role === CreepRole.Harvester &&
+        creep.memory.spawnId === spawnId &&
+        creep.memory.state !== HarvesterState.Recycling
     ).length;
   }
 

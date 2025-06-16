@@ -9,7 +9,7 @@ import { ABaseService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 class TransporterService extends ABaseService<TransporterCreep> {
-  MAX_CREEPS = 5;
+  MAX_CREEPS = 4;
   MIN_CREEPS_TTL = 60;
   MAX_CREEPS_PER_CONTAINER = 2;
   public constructor(private transporterRepository: ITransporterRepository) {
@@ -122,7 +122,16 @@ class TransporterService extends ABaseService<TransporterCreep> {
     const containersCount = this.transporterRepository.countCreepsByTargetId();
     const sources = creep.room.find(FIND_STRUCTURES, {
       filter: structure => {
-        if (structure.structureType !== STRUCTURE_CONTAINER) return false;
+        switch (structure.structureType) {
+          case STRUCTURE_CONTAINER:
+            break;
+          case STRUCTURE_LINK:
+            const linkMemory = Memory.links?.[structure.id] || {};
+            if (!linkMemory.isContainer) return false;
+            break;
+          default:
+            return false;
+        }
 
         const count = containersCount[structure.id] || 0;
         // const flagMax = structure.pos.look().find(s => s.type === "flag");

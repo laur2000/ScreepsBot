@@ -24,9 +24,9 @@ class BuilderService extends ABaseService<BuilderCreep> {
     const harvesterName = `builder-${spawn.name}-${getUniqueId()}`;
 
     const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Work]: 4,
-      [CreepBodyPart.Carry]: 2,
-      [CreepBodyPart.Move]: 3
+      [CreepBodyPart.Work]: 6,
+      [CreepBodyPart.Carry]: 4,
+      [CreepBodyPart.Move]: 5
     };
     const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
       memory: { role: CreepRole.Builder, spawnId: spawn.id, state: BuilderState.Building } as BuilderMemory

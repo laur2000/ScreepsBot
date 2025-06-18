@@ -23,7 +23,11 @@ class LinkService implements ILinkService {
     const { targetId } = Memory.links[link.id] || {};
     if (link.store.getFreeCapacity(RESOURCE_ENERGY) === 0 && targetId) {
       const targetLink = Game.getObjectById<StructureLink>(targetId);
-      if (!!targetLink && targetLink.structureType === STRUCTURE_LINK) {
+      if (
+        !!targetLink &&
+        targetLink.structureType === STRUCTURE_LINK &&
+        targetLink.store.getUsedCapacity(RESOURCE_ENERGY) === 0
+      ) {
         link.transferEnergy(Game.getObjectById(targetId) as StructureLink);
       }
     }

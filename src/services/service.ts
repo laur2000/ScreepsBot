@@ -20,7 +20,7 @@ export abstract class ABaseService<T extends Creep> implements IService<T> {
   constructor(private repository: IRepository<T>) {}
 
   protected doRecycle(creep: T): void {
-    const spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
+    const spawn = Game.getObjectById(creep.memory.spawnId) as StructureSpawn;
     if (!spawn) return;
 
     const err = spawn.recycleCreep(creep);
@@ -34,6 +34,7 @@ export abstract class ABaseService<T extends Creep> implements IService<T> {
 
   protected actionOrMove(creep: T, action: () => ScreepsReturnCode, target: RoomPosition | HasPos): ScreepsReturnCode {
     const result = action();
+
     if (result === ERR_NOT_IN_RANGE) {
       this.move(creep, target);
     }

@@ -8,11 +8,11 @@ import {
 import { ABaseService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
+import { findRepository, IFindRepository } from "repositories/findRepository";
 class TransporterService extends ABaseService<TransporterCreep> {
-  MAX_CREEPS = 4;
   MIN_CREEPS_TTL = 60;
   MAX_CREEPS_PER_CONTAINER = 2;
-  public constructor(private transporterRepository: ITransporterRepository) {
+  public constructor(private transporterRepository: ITransporterRepository, private findRepository: IFindRepository) {
     super(transporterRepository);
   }
 
@@ -24,7 +24,10 @@ class TransporterService extends ABaseService<TransporterCreep> {
 
   override needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.transporterRepository.countCreepsInSpawn(spawn.id);
-    return creepCount < this.MAX_CREEPS;
+    const containersCount = this.findRepository.containersCount(spawn.room);
+    const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "container").length;
+    const maxCreeps = (containerFlags + containersCount) * this.MAX_CREEPS_PER_CONTAINER;
+    return creepCount < 2;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
@@ -88,11 +91,26 @@ class TransporterService extends ABaseService<TransporterCreep> {
         switch (structure.structureType) {
           case STRUCTURE_EXTENSION:
           case STRUCTURE_SPAWN:
+          case STRUCTURE_LAB:
+            return (
+              (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
+                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) ||
+              (creep.store.getUsedCapacity(RESOURCE_CATALYZED_GHODIUM_ACID) > 0 &&
+                structure.store.getFreeCapacity(RESOURCE_CATALYZED_GHODIUM_ACID))
+            );
+          case STRUCTURE_TERMINAL:
+            const terminalId = creep.room.terminal?.id;
+            const transaction = global.getTransaction(terminalId);
+            if (!transaction) return false;
+            return structure.store.getUsedCapacity(RESOURCE_ENERGY) < transaction.energyNeeded;
           case STRUCTURE_STORAGE:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
 
           case STRUCTURE_TOWER:
-            return structure.store.getFreeCapacity(RESOURCE_ENERGY) > creep.store.getUsedCapacity(RESOURCE_ENERGY);
+            return (
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > creep.store.getUsedCapacity(RESOURCE_ENERGY) &&
+              creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+            );
           default:
             return false;
         }
@@ -100,47 +118,36 @@ class TransporterService extends ABaseService<TransporterCreep> {
       priority: structure => {
         switch (structure.structureType) {
           case STRUCTURE_EXTENSION:
-            return 1;
           case STRUCTURE_SPAWN:
             return 1;
+          case STRUCTURE_TERMINAL:
+            return 2;
           case STRUCTURE_TOWER:
             return 3;
-          case STRUCTURE_STORAGE:
+          case STRUCTURE_LAB:
             return 4;
+          case STRUCTURE_STORAGE:
+            return 10;
+
           default:
             return 1000;
         }
       }
     });
-
     if (!target) return;
-    this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
+
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
+    } else if (creep.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
+      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_HYDROGEN), target);
+    } else if (creep.store.getUsedCapacity(RESOURCE_CATALYZED_GHODIUM_ACID) > 0) {
+      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_CATALYZED_GHODIUM_ACID), target);
+    }
   }
   private assignSource(creep: TransporterCreep): void {
     if (creep.memory.containerTargetId) return;
 
-    const containersCount = this.transporterRepository.countCreepsByTargetId();
-    const sources = creep.room.find(FIND_STRUCTURES, {
-      filter: structure => {
-        switch (structure.structureType) {
-          case STRUCTURE_CONTAINER:
-            break;
-          case STRUCTURE_LINK:
-            const linkMemory = Memory.links?.[structure.id] || {};
-            if (!linkMemory.isContainer) return false;
-            break;
-          default:
-            return false;
-        }
-
-        const count = containersCount[structure.id] || 0;
-        // const flagMax = structure.pos.look().find(s => s.type === "flag");
-        // return count < structure.pos.look().filter(s => s.type === Flag)[0].flag?.name;
-        Memory.containers = Memory.containers || {};
-        const maxCount = Memory.containers?.[structure.id]?.maxCreeps || this.MAX_CREEPS_PER_CONTAINER;
-        return count < maxCount;
-      }
-    });
+    const sources = this.findRepository.findAvailableContainers(creep.room, this.MAX_CREEPS_PER_CONTAINER);
 
     if (sources[0]) {
       creep.memory.containerTargetId = sources[0].id;
@@ -149,14 +156,24 @@ class TransporterService extends ABaseService<TransporterCreep> {
 
   private doCollect(creep: TransporterCreep): void {
     const tombstone = creep.pos.findClosestByRange(FIND_TOMBSTONES, {
-      filter: tombstone => tombstone.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+      filter: tombstone =>
+        tombstone.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || tombstone.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0
     });
+
+    const droppedResource = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES);
 
     const target = tombstone || (creep.memory.containerTargetId && Game.getObjectById(creep.memory.containerTargetId));
 
+    if (droppedResource) {
+      this.actionOrMove(creep, () => creep.pickup(droppedResource), droppedResource);
+    }
     if (!target) return;
-    this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
+    if (target.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
+    } else if (target.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
+      this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_HYDROGEN), target);
+    }
   }
 }
 
-export const transporterService = new TransporterService(transporterRepository);
+export const transporterService = new TransporterService(transporterRepository, findRepository);

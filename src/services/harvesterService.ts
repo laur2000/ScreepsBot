@@ -20,7 +20,10 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
   needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.harvesterRepository.countCreepsInSpawn(spawn.id);
     const sourcesCount = this.findRepository.sourcesCount(spawn.room);
-    return creepCount < sourcesCount * this.MAX_CREEPS_PER_SOURCE;
+    const harvestFlags = this.harvesterRepository.countHarvestFlags();
+    const maxCreepsPerSource = this.harvesterRepository.getMaxCreepsPerSpawnLevel(spawn);
+    const maxCreeps = (harvestFlags + sourcesCount) * maxCreepsPerSource;
+    return creepCount < maxCreeps;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
@@ -82,7 +85,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
 
   private assignSource(creep: HarvesterCreep): void {
     if (creep.memory.harvestTargetId) return;
-    const sources = this.findRepository.findAvailableSource(creep.room, this.MAX_CREEPS_PER_SOURCE);
+    const sources = this.findRepository.findAvailableSources(creep.room, this.MAX_CREEPS_PER_SOURCE);
     if (sources[0]) {
       creep.memory.harvestTargetId = sources[0].id;
     }
@@ -100,17 +103,29 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
       filter: structure => {
         switch (structure.structureType) {
           case STRUCTURE_CONTAINER:
+          case STRUCTURE_STORAGE:
+            return (
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 ||
+              structure.store.getFreeCapacity(RESOURCE_HYDROGEN) > 0
+            );
           case STRUCTURE_LINK:
-            return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+            return (
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+            );
+          case STRUCTURE_CONTROLLER:
+            return true;
           default:
             return false;
         }
       }
     });
-
     if (!target) return;
 
-    this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
+    if (creep.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
+      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_HYDROGEN), target);
+    } else {
+      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
+    }
   }
 }
 

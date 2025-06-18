@@ -3,7 +3,8 @@ export enum CreepRole {
   Soldier = "soldier",
   Turret = "turret",
   Builder = "builder",
-  Transporter = "transporter"
+  Transporter = "transporter",
+  Claimer = "claimer"
 }
 
 export enum CreepBodyPart {

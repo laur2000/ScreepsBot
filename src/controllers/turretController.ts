@@ -13,7 +13,7 @@ class TurretController implements IController {
       }
       const structures = tower.room.find(FIND_STRUCTURES, {
         filter: structure => {
-          const needsRepair = structure.hits < structure.hitsMax && structure.hits < 50000;
+          const needsRepair = structure.hits < structure.hitsMax && structure.hits < 80000;
           const isWall = structure.structureType === STRUCTURE_WALL;
           return needsRepair && !isWall;
         }

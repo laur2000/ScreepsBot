@@ -80,6 +80,18 @@ type HasPos = { pos: RoomPosition };
     Interfaces matching on name from @types/screeps will be merged. This is how you can extend the 'built-in' interfaces from @types/screeps.
   */
 // Memory extension samples
+interface ITransaction {
+  energyNeeded: number;
+  amount: number;
+  orderId: string;
+  roomName: string;
+}
+
+interface IOrder extends Order {
+  realUnitPrice: number;
+  totalTransactionCost: number;
+}
+
 interface Memory {
   uuid: number;
   log: any;
@@ -88,6 +100,11 @@ interface Memory {
     [key: string]: {
       targetId?: string;
       isContainer?: boolean;
+    };
+  };
+  terminals: {
+    [key: string]: {
+      transactions: ITransaction[];
     };
   };
   [key: string]: any;

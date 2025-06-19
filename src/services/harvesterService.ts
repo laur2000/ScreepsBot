@@ -9,6 +9,7 @@ import { ABaseService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 import { IFindRepository, findRepository } from "repositories/findRepository";
+import { roomServiceConfig } from "./roomServiceConfig";
 
 class HarvesterService extends ABaseService<HarvesterCreep> {
   constructor(private harvesterRepository: IHarvesterRepository, private findRepository: IFindRepository) {
@@ -18,22 +19,18 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
   MIN_CREEPS_TTL = 60;
 
   needMoreCreeps(spawn: StructureSpawn): boolean {
+    const { harvester } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
     const creepCount = this.harvesterRepository.countCreepsInSpawn(spawn.id);
     const sourcesCount = this.findRepository.sourcesCount(spawn.room);
     const harvestFlags = this.harvesterRepository.countHarvestFlags();
-    const maxCreepsPerSource = this.harvesterRepository.getMaxCreepsPerSpawnLevel(spawn);
-    const maxCreeps = (harvestFlags + sourcesCount) * maxCreepsPerSource;
+    const maxCreeps = (harvestFlags + sourcesCount) * (harvester?.maxCreepsPerSource || 1);
     return creepCount < maxCreeps;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
+    const { harvester } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
     const harvesterName = `harvester-${spawn.name}-${getUniqueId()}`;
-    const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Work]: 4,
-      [CreepBodyPart.Carry]: 1,
-      [CreepBodyPart.Move]: 2
-    };
-    const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
+    const res = spawn.spawnCreep(recordCountToArray(harvester!.bodyParts), harvesterName, {
       memory: { role: CreepRole.Harvester, spawnId: spawn.id, state: HarvesterState.Harvesting } as HarvesterMemory
     });
 

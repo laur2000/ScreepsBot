@@ -9,6 +9,7 @@ import { ABaseService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 import { findRepository, IFindRepository } from "repositories/findRepository";
+import { roomServiceConfig } from "./roomServiceConfig";
 class TransporterService extends ABaseService<TransporterCreep> {
   MIN_CREEPS_TTL = 60;
   MAX_CREEPS_PER_CONTAINER = 2;
@@ -23,21 +24,20 @@ class TransporterService extends ABaseService<TransporterCreep> {
   }
 
   override needMoreCreeps(spawn: StructureSpawn): boolean {
+    const { transporter } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+
     const creepCount = this.transporterRepository.countCreepsInSpawn(spawn.id);
     const containersCount = this.findRepository.containersCount(spawn.room);
     const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "container").length;
     const maxCreeps = (containerFlags + containersCount) * this.MAX_CREEPS_PER_CONTAINER;
-    return creepCount < 2;
+    return creepCount < (transporter?.maxCreeps || 1);
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
     const name = `transporter-${spawn.name}-${getUniqueId()}`;
+    const { transporter } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
 
-    const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Carry]: 6,
-      [CreepBodyPart.Move]: 3
-    };
-    const res = spawn.spawnCreep(recordCountToArray(bodyParts), name, {
+    const res = spawn.spawnCreep(recordCountToArray(transporter!.bodyParts), name, {
       memory: {
         role: CreepRole.Transporter,
         spawnId: spawn.id,
@@ -163,7 +163,6 @@ class TransporterService extends ABaseService<TransporterCreep> {
     const droppedResource = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES);
 
     const target = tombstone || (creep.memory.containerTargetId && Game.getObjectById(creep.memory.containerTargetId));
-
     if (droppedResource) {
       this.actionOrMove(creep, () => creep.pickup(droppedResource), droppedResource);
     }
@@ -172,6 +171,10 @@ class TransporterService extends ABaseService<TransporterCreep> {
       this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
     } else if (target.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
       this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_HYDROGEN), target);
+    } else {
+      const terminal = creep.room.terminal;
+      if (!terminal || terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) return;
+      this.actionOrMove(creep, () => creep.withdraw(terminal, RESOURCE_ENERGY), terminal);
     }
   }
 }

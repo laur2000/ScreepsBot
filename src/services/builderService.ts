@@ -4,6 +4,7 @@ import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { IRepository } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
 import { findRepository, IFindRepository } from "repositories/findRepository";
+import { roomServiceConfig } from "./roomServiceConfig";
 class BuilderService extends ABaseService<BuilderCreep> {
   MAX_CREEPS_PER_SOURCE = 1;
   MIN_CREEPS_TTL = 60;
@@ -17,21 +18,17 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   override needMoreCreeps(spawn: StructureSpawn): boolean {
+    const { builder } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+
     const creepCount = this.builderRepository.countCreepsInSpawn(spawn.id);
-    const sourcesCount = this.findRepository.sourcesCount(spawn.room);
-    const maxCreeps = sourcesCount * this.MAX_CREEPS_PER_SOURCE;
-    return creepCount < 3;
+    return creepCount < (builder?.maxCreeps || 1);
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
     const harvesterName = `builder-${spawn.name}-${getUniqueId()}`;
+    const { builder } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
 
-    const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Work]: 4,
-      [CreepBodyPart.Carry]: 3,
-      [CreepBodyPart.Move]: 3
-    };
-    const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
+    const res = spawn.spawnCreep(recordCountToArray(builder!.bodyParts), harvesterName, {
       memory: { role: CreepRole.Builder, spawnId: spawn.id, state: BuilderState.Collecting } as BuilderMemory
     });
 

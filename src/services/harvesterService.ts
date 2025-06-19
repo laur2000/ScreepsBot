@@ -110,7 +110,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
               structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
             );
           case STRUCTURE_CONTROLLER:
-            return true;
+            return structure.my;
           default:
             return false;
         }

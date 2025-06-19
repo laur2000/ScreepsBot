@@ -4,7 +4,9 @@ export enum CreepRole {
   Turret = "turret",
   Builder = "builder",
   Transporter = "transporter",
-  Claimer = "claimer"
+  Claimer = "claimer",
+  Reserver = "reserver",
+  Hauler = "hauler"
 }
 
 export enum CreepBodyPart {

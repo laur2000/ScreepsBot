@@ -67,10 +67,6 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
       default:
         creep.memory.state = ClaimerState.Collecting;
     }
-
-    if ((creep.ticksToLive || this.MIN_CREEPS_TTL) < this.MIN_CREEPS_TTL) {
-      creep.memory.state = ClaimerState.Recycling;
-    }
   }
 
   private executeClaimerState(creep: ClaimerCreep): void {

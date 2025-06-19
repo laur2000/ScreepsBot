@@ -1,7 +1,8 @@
 declare global {
   namespace NodeJS {
     interface Global {
-      makeDeal(roomName: string, dealId: string, amount: number): void;
+      makeDeal(roomName: string, dealId: string, amount: number): boolean;
+      buyCheapestEnergy(roomName: string, amount: number, maxUnitPrice?: number): boolean;
       getOrders(params: {
         roomName: string;
         ord?: "asc" | "desc";
@@ -35,6 +36,19 @@ global.getOrders = function ({ roomName, limit, ord = "asc", orderType, resource
     });
 };
 
+global.buyCheapestEnergy = function (roomName: string, amount: number, maxUnitPrice?: number) {
+  const [order] = global.getOrders({
+    roomName,
+    limit: 1,
+    ord: "asc",
+    orderType: ORDER_SELL,
+    resourceType: RESOURCE_ENERGY
+  });
+  if (!order) return false;
+  if (maxUnitPrice && order.realUnitPrice > maxUnitPrice) return false;
+  return global.makeDeal(roomName, order.id, amount);
+};
+
 global.makeDeal = function (roomName: string, orderId: string, amount: number) {
   const order = Game.market.getOrderById(orderId);
 
@@ -57,6 +71,7 @@ global.makeDeal = function (roomName: string, orderId: string, amount: number) {
     transactions: []
   };
   Memory.terminals[room.terminal.id].transactions.push({ energyNeeded: transactionConst, orderId, amount, roomName });
+  console.log(JSON.stringify(Memory.terminals[room.terminal.id]));
   return true;
 };
 

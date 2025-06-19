@@ -29,7 +29,11 @@ class BuilderService extends ABaseService<BuilderCreep> {
     const { builder } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
 
     const res = spawn.spawnCreep(recordCountToArray(builder!.bodyParts), harvesterName, {
-      memory: { role: CreepRole.Builder, spawnId: spawn.id, state: BuilderState.Collecting } as BuilderMemory
+      memory: {
+        role: CreepRole.Builder,
+        spawnId: spawn.id,
+        state: builder?.useBoost ? BuilderState.Boosting : BuilderState.Collecting
+      } as BuilderMemory
     });
 
     return res as TSpawnCreepResponse;

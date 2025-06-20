@@ -16,7 +16,7 @@ export interface SoldierMemory {
 }
 
 export interface ISoldierRepository extends IRepository<SoldierCreep> {
-  countEnemiesInRooms(): number
+  countEnemiesInRooms(): number;
 }
 
 export class SoldierRepository implements ISoldierRepository {
@@ -33,7 +33,20 @@ export class SoldierRepository implements ISoldierRepository {
   }
 
   countEnemiesInRooms(): number {
-    return Object.values(Game.rooms).reduce((acc, room) => acc + room.find(FIND_HOSTILE_CREEPS).length, 0);
+    const hostileCreeps = Object.values(Game.rooms).reduce(
+      (acc, room) => acc + room.find(FIND_HOSTILE_CREEPS).length,
+      0
+    );
+
+    const invaderCore = Object.values(Game.rooms).reduce(
+      (acc, room) =>
+        acc +
+        room.find(FIND_HOSTILE_STRUCTURES, { filter: structure => structure.structureType === STRUCTURE_INVADER_CORE })
+          .length,
+      0
+    );
+
+    return hostileCreeps + invaderCore;
   }
 }
 

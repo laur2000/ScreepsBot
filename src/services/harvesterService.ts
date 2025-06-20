@@ -24,6 +24,7 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
     const sourcesCount = this.findRepository.sourcesCount(spawn.room);
     const harvestFlags = this.harvesterRepository.countHarvestFlags();
     const maxCreeps = (harvestFlags + sourcesCount) * (harvester?.maxCreepsPerSource || 1);
+
     return creepCount < maxCreeps;
   }
 

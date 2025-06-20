@@ -14,7 +14,6 @@ class GarbageCollectorController implements IController {
     const creepsToDelete = memoCreeps.filter(creepName => !currentcreeps.includes(creepName));
     creepsToDelete.forEach(creepName => {
       delete Memory.creeps[creepName];
-      console.log(`Deleted creep ${creepName} from memory.`);
     });
   }
 
@@ -24,7 +23,6 @@ class GarbageCollectorController implements IController {
     const flagsToDelete = memoFlags.filter(flagName => !currentFlags.includes(flagName));
     flagsToDelete.forEach(flagName => {
       delete Memory.flags[flagName];
-      console.log(`Deleted flag ${flagName} from memory.`);
     });
   }
 }

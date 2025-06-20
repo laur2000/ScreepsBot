@@ -8,6 +8,7 @@ import {
 import { ABaseService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
+import { roomServiceConfig, USER_NAME } from "./roomServiceConfig";
 class ReserverService extends ABaseService<ReserverCreep> {
   MIN_CREEPS_TTL = 60;
   public constructor(private reserverRepository: IReserverRepository) {
@@ -22,17 +23,17 @@ class ReserverService extends ABaseService<ReserverCreep> {
   override needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.reserverRepository.countCreepsInSpawn(spawn.id);
     const reserveCount = this.reserverRepository.countReserveFlags();
-    return creepCount < reserveCount;
+    const { reserver } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+    const maxCreepsPerSource = reserver?.maxCreepsPerSource ?? 1;
+    return creepCount < reserveCount * maxCreepsPerSource;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
     const harvesterName = `reserver-${spawn.name}-${getUniqueId()}`;
 
-    const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Claim]: 2,
-      [CreepBodyPart.Move]: 2
-    };
-    const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
+    const { reserver } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+
+    const res = spawn.spawnCreep(recordCountToArray(reserver!.bodyParts), harvesterName, {
       memory: { role: CreepRole.Reserver, spawnId: spawn.id, state: ReserverState.Reserving } as ReserverMemory
     });
 
@@ -75,7 +76,11 @@ class ReserverService extends ABaseService<ReserverCreep> {
     const controller = room.controller;
     if (!controller) return;
 
-    this.actionOrMove(creep, () => creep.reserveController(controller), controller);
+    if (controller.reservation && controller.reservation.username !== USER_NAME) {
+      const err = this.actionOrMove(creep, () => creep.attackController(controller), controller);
+    } else {
+      const err = this.actionOrMove(creep, () => creep.reserveController(controller), controller);
+    }
   }
 }
 

@@ -23,7 +23,7 @@ class SoldierService extends ABaseService<SoldierCreep> {
   override needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.soldierRepository.countCreepsInSpawn(spawn.id);
     const enemiesCount = this.soldierRepository.countEnemiesInRooms();
-    return creepCount < enemiesCount;
+    return creepCount < enemiesCount * 2;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
@@ -70,9 +70,14 @@ class SoldierService extends ABaseService<SoldierCreep> {
   }
 
   private doAttack(creep: SoldierCreep): void {
-    let enemy: AnyCreep | null = null;
+    let enemy: AnyCreep | StructureInvaderCore | null = null;
     for (const room of Object.values(Game.rooms)) {
       enemy = room.find(FIND_HOSTILE_CREEPS)[0];
+      if (enemy) break;
+
+      enemy = room.find(FIND_HOSTILE_STRUCTURES, {
+        filter: s => s.structureType === STRUCTURE_INVADER_CORE
+      })[0] as StructureInvaderCore;
       if (enemy) break;
     }
 

@@ -71,7 +71,6 @@ global.makeDeal = function (roomName: string, orderId: string, amount: number) {
     transactions: []
   };
   Memory.terminals[room.terminal.id].transactions.push({ energyNeeded: transactionConst, orderId, amount, roomName });
-  console.log(JSON.stringify(Memory.terminals[room.terminal.id]));
   return true;
 };
 

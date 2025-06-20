@@ -26,6 +26,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
   haulerController.run();
   soldierController.run();
   pixelController.run();
-  marketController.run();
+  marketController.run();EVENT_ATTACK
   garbageCollectorController.run();
 });

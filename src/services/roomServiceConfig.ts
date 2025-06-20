@@ -1,5 +1,6 @@
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 
+export const USER_NAME = "xXSefuXx";
 export const roomServiceConfig: Record<
   string,
   Partial<
@@ -21,7 +22,7 @@ export const roomServiceConfig: Record<
       useBoost: false
     },
     builder: {
-      maxCreeps: 3,
+      maxCreeps: 4,
       bodyParts: { [CreepBodyPart.Work]: 6, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 5 },
       useBoost: true
     },
@@ -32,23 +33,31 @@ export const roomServiceConfig: Record<
     },
     hauler: {
       maxCreepsPerSource: 1,
-      bodyParts: { [CreepBodyPart.Work]: 2, [CreepBodyPart.Carry]: 10, [CreepBodyPart.Move]: 6 },
+      bodyParts: { [CreepBodyPart.Work]: 4, [CreepBodyPart.Carry]: 10, [CreepBodyPart.Move]: 7 },
       useBoost: false
     },
     soldier: {
-      bodyParts: { [CreepBodyPart.Tough]: 10, [CreepBodyPart.Attack]: 10, [CreepBodyPart.Move]: 20 },
+      bodyParts: { [CreepBodyPart.Attack]: 15, [CreepBodyPart.Move]: 15 },
+      useBoost: false
+    },
+    reserver: {
+      maxCreepsPerSource: 0,
+      bodyParts: {
+        [CreepBodyPart.Claim]: 2,
+        [CreepBodyPart.Move]: 2
+      },
       useBoost: false
     }
   },
   W7S35: {
     harvester: {
       maxCreepsPerSource: 1,
-      bodyParts: { [CreepBodyPart.Work]: 6, [CreepBodyPart.Carry]: 1, [CreepBodyPart.Move]: 2 },
+      bodyParts: { [CreepBodyPart.Work]: 7, [CreepBodyPart.Carry]: 1, [CreepBodyPart.Move]: 2 },
       useBoost: false
     },
     builder: {
-      maxCreeps: 3,
-      bodyParts: { [CreepBodyPart.Work]: 4, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 4 },
+      maxCreeps: 4,
+      bodyParts: { [CreepBodyPart.Work]: 7, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 6 },
       useBoost: false
     },
     transporter: {
@@ -58,11 +67,19 @@ export const roomServiceConfig: Record<
     },
     hauler: {
       maxCreepsPerSource: 1,
-      bodyParts: { [CreepBodyPart.Work]: 2, [CreepBodyPart.Carry]: 8, [CreepBodyPart.Move]: 5 },
+      bodyParts: { [CreepBodyPart.Work]: 4, [CreepBodyPart.Carry]: 8, [CreepBodyPart.Move]: 7 },
       useBoost: false
     },
     soldier: {
-      bodyParts: { [CreepBodyPart.Tough]: 5, [CreepBodyPart.Attack]: 5, [CreepBodyPart.Move]: 10 },
+      bodyParts: { [CreepBodyPart.Attack]: 10, [CreepBodyPart.Move]: 10 },
+      useBoost: false
+    },
+    reserver: {
+      maxCreepsPerSource: 1,
+      bodyParts: {
+        [CreepBodyPart.Claim]: 2,
+        [CreepBodyPart.Move]: 2
+      },
       useBoost: false
     }
   },
@@ -96,6 +113,14 @@ export const roomServiceConfig: Record<
     },
     soldier: {
       bodyParts: { [CreepBodyPart.Tough]: 2, [CreepBodyPart.Attack]: 2, [CreepBodyPart.Move]: 2 },
+      useBoost: false
+    },
+    reserver: {
+      maxCreepsPerSource: 1,
+      bodyParts: {
+        [CreepBodyPart.Claim]: 2,
+        [CreepBodyPart.Move]: 2
+      },
       useBoost: false
     }
   },

@@ -149,6 +149,8 @@ export class HaulerService extends ABaseService<HaulerCreep> {
         switch (structure.structureType) {
           case STRUCTURE_ROAD:
             return structure.hits < structure.hitsMax;
+          case STRUCTURE_CONTAINER:
+            return structure.hits < structure.hitsMax;
           default:
             return "my" in structure && structure.my && structure.hits < structure.hitsMax;
         }

@@ -157,6 +157,14 @@ class BuilderService extends ABaseService<BuilderCreep> {
         }
       }
     });
+
+    const groundResource = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+      filter: resource => resource.resourceType === RESOURCE_ENERGY
+    });
+    if(groundResource) {
+      this.actionOrMove(creep, () => creep.pickup(groundResource), groundResource);
+      return;
+    }
     if (!target) {
       const buildFlag = Object.values(Game.flags).find(flag => flag.name === "build");
       if (!buildFlag) return;

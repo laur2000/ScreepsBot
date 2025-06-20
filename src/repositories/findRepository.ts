@@ -39,9 +39,8 @@ export class FindRepository implements IFindRepository {
         filter: mineral => {
           if (mineral.mineralAmount === 0) return false;
           const extractor = mineral.pos
-            .look()
-            .find(structure => "structureType" in structure && structure.structureType === STRUCTURE_EXTRACTOR);
-
+            .lookFor(LOOK_STRUCTURES)
+            .find(structure => structure.structureType === STRUCTURE_EXTRACTOR);
           if (!extractor) return false;
           const count = sourcesCount[mineral.id] || 0;
           return count < max;

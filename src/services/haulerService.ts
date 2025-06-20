@@ -8,9 +8,9 @@ import {
 import { ABaseService, TSpawnCreepResponse } from "./service";
 import { CreepBodyPart, CreepRole } from "repositories/repository";
 import { getUniqueId, recordCountToArray } from "utils";
-import { findRepository, IFindRepository } from "repositories/findRepository";
+import { findRepository, IFindRepository, THaulerContainer } from "repositories/findRepository";
 import { roomServiceConfig } from "./roomServiceConfig";
-class HaulerService extends ABaseService<HaulerCreep> {
+export class HaulerService extends ABaseService<HaulerCreep> {
   MIN_CREEPS_TTL = 60;
   MAX_CREEPS_PER_CONTAINER = 2;
   public constructor(private haulerRepository: IHaulerRepository, private findRepository: IFindRepository) {
@@ -18,33 +18,70 @@ class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   override execute(hauler: HaulerCreep): void {
-    this.assignSource(hauler);
+    if (hauler.spawning) return;
     this.updateHaulerState(hauler);
     this.executeHaulerState(hauler);
   }
 
-  override needMoreCreeps(spawn: StructureSpawn): boolean {
-    const { hauler } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
-
-    const creepCount = this.haulerRepository.countCreepsInSpawn(spawn.id);
-    const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "hauler_container").length;
-    const maxCreeps = containerFlags * (hauler?.maxCreepsPerSource || 1);
-    return creepCount < maxCreeps;
+  override needMoreCreeps(): boolean {
+    const haulersCount = this.haulerRepository.getAllCreeps().length;
+    const haulerContainers = this.findRepository.findAllHaulerContainers();
+    // TODO Refactor into repository method
+    let maxHaulers = 0;
+    for (const haulerContainer of haulerContainers) {
+      const roomName = haulerContainer.room.name;
+      const { hauler } = roomServiceConfig[roomName] || roomServiceConfig.external;
+      maxHaulers += hauler?.maxCreepsPerSource ?? 1;
+    }
+    return haulersCount < maxHaulers;
   }
 
-  override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    const name = `hauler-${spawn.name}-${getUniqueId()}`;
-    const { hauler } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+  containerCache: Record<string, Record<string, number>> = {};
 
-    const res = spawn.spawnCreep(recordCountToArray(hauler!.bodyParts), name, {
-      memory: {
-        role: CreepRole.Hauler,
-        spawnId: spawn.id,
-        state: HaulerState.Collecting
-      } as HaulerMemory
-    });
+  private findClosestSpawn(spawns: StructureSpawn[], haulerContainer: THaulerContainer) {
+    let maxCost = Number.MAX_SAFE_INTEGER;
+    let closestAvailableSpawn = null;
+    for (const spawn of spawns) {
+      let cost = this.containerCache[spawn.id]?.[haulerContainer.id];
 
-    return res as TSpawnCreepResponse;
+      if (!cost) {
+        const path = PathFinder.search(spawn.pos, haulerContainer.pos);
+        this.containerCache[spawn.id] = this.containerCache[spawn.id] || {};
+        this.containerCache[spawn.id][haulerContainer.id] = path.cost;
+        cost = path.cost;
+      }
+
+      if (cost < maxCost) {
+        maxCost = cost;
+        closestAvailableSpawn = spawn;
+      }
+    }
+    return closestAvailableSpawn;
+  }
+  override spawn(): TSpawnCreepResponse {
+    const name = `hauler-${getUniqueId()}`;
+    const haulerContainers = this.findRepository.findAvailableHaulerContainers();
+    for (const haulerContainer of haulerContainers) {
+      const allSpawns = Object.values(Game.spawns);
+      const availableSpawns = allSpawns.filter(spawn => !spawn.spawning);
+      const closestAvailableSpawn = this.findClosestSpawn(availableSpawns, haulerContainer);
+      if (!closestAvailableSpawn) return ERR_BUSY;
+
+      const closestSpawn = this.findClosestSpawn(allSpawns, haulerContainer)!;
+
+      const { hauler } = roomServiceConfig[closestAvailableSpawn.room.name] || roomServiceConfig.default;
+
+      closestAvailableSpawn.spawnCreep(recordCountToArray(hauler!.bodyParts), name, {
+        memory: {
+          role: CreepRole.Hauler,
+          spawnId: closestSpawn.id,
+          state: HaulerState.Collecting,
+          containerTargetId: haulerContainer.id
+        } as HaulerMemory
+      });
+    }
+
+    return OK;
   }
 
   private updateHaulerState(creep: HaulerCreep): void {
@@ -122,7 +159,9 @@ class HaulerService extends ABaseService<HaulerCreep> {
     this.actionOrMove(creep, () => creep.repair(needsRepair), needsRepair);
   }
   private doTransfer(creep: HaulerCreep): void {
-    const originRoom = Game.spawns[creep.memory.spawnId].room;
+    const spawn: StructureSpawn | null = Game.getObjectById(creep.memory.spawnId);
+    if (!spawn) return;
+    const originRoom = spawn.room;
 
     if (!originRoom) return;
 
@@ -158,16 +197,18 @@ class HaulerService extends ABaseService<HaulerCreep> {
 
     this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
   }
-  private assignSource(creep: HaulerCreep): void {
-    if (creep.memory.containerTargetId) return;
-    const { hauler } = roomServiceConfig[Game.spawns[creep.memory.spawnId].room.name] || roomServiceConfig.default;
+  // private assignSource(creep: HaulerCreep): void {
+  //   if (creep.memory.containerTargetId) return;
+  //   const spawn: StructureSpawn | null = Game.getObjectById(creep.memory.spawnId);
+  //   if (!spawn) return;
+  //   const { hauler } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
 
-    const sources = this.findRepository.findHaulerContainers(hauler?.maxCreepsPerSource ?? 1);
+  //   const sources = this.findRepository.findHaulerContainers(hauler?.maxCreepsPerSource ?? 1);
 
-    if (sources[0]) {
-      creep.memory.containerTargetId = sources[0].id;
-    }
-  }
+  //   if (sources[0]) {
+  //     creep.memory.containerTargetId = sources[0].id;
+  //   }
+  // }
 
   private doCollect(creep: HaulerCreep): void {
     const target: any = creep.memory.containerTargetId && Game.getObjectById(creep.memory.containerTargetId);

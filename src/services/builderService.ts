@@ -131,12 +131,17 @@ class BuilderService extends ABaseService<BuilderCreep> {
     });
 
     const controller = creep.room.controller;
-    if (controller && (!target || controller.ticksToDowngrade < 1000)) {
+    if (controller && controller.my && (!target || controller.ticksToDowngrade < 1000)) {
       this.actionOrMove(creep, () => creep.upgradeController(controller), controller);
       return;
     }
 
-    if (!target) return;
+    if (!target) {
+      if (buildFlag) {
+        buildFlag.remove();
+      }
+      return;
+    }
     this.actionOrMove(creep, () => creep.build(target), target);
   }
 

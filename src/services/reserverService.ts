@@ -29,8 +29,8 @@ class ReserverService extends ABaseService<ReserverCreep> {
     const harvesterName = `reserver-${spawn.name}-${getUniqueId()}`;
 
     const bodyParts: Partial<Record<CreepBodyPart, number>> = {
-      [CreepBodyPart.Claim]: 1,
-      [CreepBodyPart.Move]: 1
+      [CreepBodyPart.Claim]: 2,
+      [CreepBodyPart.Move]: 2
     };
     const res = spawn.spawnCreep(recordCountToArray(bodyParts), harvesterName, {
       memory: { role: CreepRole.Reserver, spawnId: spawn.id, state: ReserverState.Reserving } as ReserverMemory

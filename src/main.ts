@@ -7,6 +7,7 @@ import { haulerController } from "controllers/haulerController";
 import { linkController } from "controllers/linkController";
 import { pixelController } from "controllers/pixelController";
 import { reserverController } from "controllers/reserverController";
+import { soldierController } from "controllers/soldierController";
 import { transporterController } from "controllers/transporterController";
 import { turretController } from "controllers/turretController";
 import { ErrorMapper } from "utils/ErrorMapper";
@@ -23,6 +24,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   claimerController.run();
   reserverController.run();
   haulerController.run();
+  soldierController.run();
   pixelController.run();
   marketController.run();
   garbageCollectorController.run();

@@ -1,0 +1,85 @@
+import {
+  SoldierCreep,
+  SoldierMemory,
+  soldierRepository,
+  SoldierState,
+  ISoldierRepository
+} from "repositories/soldierRepository";
+import { ABaseService, TSpawnCreepResponse } from "./service";
+import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { getUniqueId, recordCountToArray } from "utils";
+import { roomServiceConfig } from "./roomServiceConfig";
+class SoldierService extends ABaseService<SoldierCreep> {
+  MIN_CREEPS_TTL = 60;
+  public constructor(private soldierRepository: ISoldierRepository) {
+    super(soldierRepository);
+  }
+
+  override execute(soldier: SoldierCreep): void {
+    this.updateSoldierState(soldier);
+    this.executeSoldierState(soldier);
+  }
+
+  override needMoreCreeps(spawn: StructureSpawn): boolean {
+    const creepCount = this.soldierRepository.countCreepsInSpawn(spawn.id);
+    const enemiesCount = this.soldierRepository.countEnemiesInRooms();
+    return creepCount < enemiesCount;
+  }
+
+  override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
+    const harvesterName = `soldier-${spawn.name}-${getUniqueId()}`;
+    const { soldier } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+
+    const res = spawn.spawnCreep(recordCountToArray(soldier!.bodyParts), harvesterName, {
+      memory: { role: CreepRole.Soldier, spawnId: spawn.id, state: SoldierState.Attacking } as SoldierMemory
+    });
+
+    return res as TSpawnCreepResponse;
+  }
+
+  private updateSoldierState(creep: SoldierCreep): void {
+    const enemiesCount = this.soldierRepository.countEnemiesInRooms();
+
+    switch (creep.memory.state) {
+      case SoldierState.Attacking:
+        if (enemiesCount === 0) {
+          creep.memory.state = SoldierState.Recycling;
+        }
+        break;
+
+      case SoldierState.Recycling:
+        if (enemiesCount > 0) {
+          creep.memory.state = SoldierState.Attacking;
+        }
+        break;
+      default:
+        creep.memory.state = SoldierState.Attacking;
+    }
+  }
+
+  private executeSoldierState(creep: SoldierCreep): void {
+    switch (creep.memory.state) {
+      case SoldierState.Attacking:
+        this.doAttack(creep);
+        break;
+
+      case SoldierState.Recycling:
+        this.doRecycle(creep);
+        break;
+    }
+  }
+
+  private doAttack(creep: SoldierCreep): void {
+    let enemy: AnyCreep | null = null;
+    for (const room of Object.values(Game.rooms)) {
+      enemy = room.find(FIND_HOSTILE_CREEPS)[0];
+      if (enemy) break;
+    }
+
+    if (!enemy) return;
+
+    this.actionOrMove(creep, () => creep.attack(enemy!), enemy);
+  }
+}
+
+export const soldierService = new SoldierService(soldierRepository);

@@ -1,11 +1,14 @@
+import { roomServiceConfig } from "services/roomServiceConfig";
 import { harvesterRepository, IHarvesterRepository } from "./harvesterRepository";
 import { haulerRepository, IHaulerRepository } from "./haulerRepository";
 import { ITransporterRepository, transporterRepository } from "./transporterRepository";
 
+export type THaulerContainer = StructureContainer | StructureLink;
 export interface IFindRepository {
   findAvailableSources(room: Room, max: number): (Source | Mineral)[];
   findAvailableContainers(room: Room, max: number): StructureContainer[];
-  findHaulerContainers(max: number): StructureContainer[];
+  findAvailableHaulerContainers(): THaulerContainer[];
+  findAllHaulerContainers(): THaulerContainer[];
   sourcesCount(room: Room): number;
   containersCount(room: Room): number;
 }
@@ -35,6 +38,11 @@ export class FindRepository implements IFindRepository {
       room.find(FIND_MINERALS, {
         filter: mineral => {
           if (mineral.mineralAmount === 0) return false;
+          const extractor = mineral.pos
+            .look()
+            .find(structure => "structureType" in structure && structure.structureType === STRUCTURE_EXTRACTOR);
+
+          if (!extractor) return false;
           const count = sourcesCount[mineral.id] || 0;
           return count < max;
         }
@@ -71,7 +79,7 @@ export class FindRepository implements IFindRepository {
     ) as StructureContainer[];
   }
 
-  findHaulerContainers(max: number) {
+  findAvailableHaulerContainers() {
     const containersCount = this.haulerRepository.countCreepsByTargetId();
     const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "hauler_container");
     const rooms = containerFlags.map(flag => flag.room).filter(room => !!room) as Room[];
@@ -88,6 +96,9 @@ export class FindRepository implements IFindRepository {
             default:
               return false;
           }
+          const roomName = structure.room.name;
+          const { hauler } = roomServiceConfig[roomName] || roomServiceConfig.default;
+          const max = hauler?.maxCreepsPerSource ?? 1;
 
           const count = containersCount[structure.id] || 0;
           Memory.containers = Memory.containers || {};
@@ -95,7 +106,27 @@ export class FindRepository implements IFindRepository {
           return count < maxCount;
         }
       })
-    ) as StructureContainer[];
+    ) as THaulerContainer[];
+  }
+
+  findAllHaulerContainers(): THaulerContainer[] {
+    const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "hauler_container");
+    const rooms = containerFlags.map(flag => flag.room).filter(room => !!room) as Room[];
+    return rooms.flatMap(room =>
+      room.find(FIND_STRUCTURES, {
+        filter: structure => {
+          switch (structure.structureType) {
+            case STRUCTURE_CONTAINER:
+              return true;
+            case STRUCTURE_LINK:
+              const linkMemory = Memory.links?.[structure.id] || {};
+              return linkMemory.isContainer;
+            default:
+              return false;
+          }
+        }
+      })
+    ) as THaulerContainer[];
   }
   sourcesCount(room: Room): number {
     const sourcesCount = room.find(FIND_SOURCES).length;

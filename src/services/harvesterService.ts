@@ -82,7 +82,8 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
 
   private assignSource(creep: HarvesterCreep): void {
     if (creep.memory.harvestTargetId) return;
-    const sources = this.findRepository.findAvailableSources(creep.room, this.MAX_CREEPS_PER_SOURCE);
+    const { harvester } = roomServiceConfig[creep.room.name] || roomServiceConfig.default;
+    const sources = this.findRepository.findAvailableSources(creep.room, harvester?.maxCreepsPerSource ?? 1);
     if (sources[0]) {
       creep.memory.harvestTargetId = sources[0].id;
     }

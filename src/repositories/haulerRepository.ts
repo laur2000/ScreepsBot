@@ -20,6 +20,7 @@ export interface HaulerMemory {
 
 export interface IHaulerRepository extends IRepository<HaulerCreep> {
   countCreepsByTargetId(): Record<string, number>;
+  getAllCreeps(): HaulerCreep[];
 }
 
 export class HaulerRepository implements IHaulerRepository {
@@ -32,6 +33,12 @@ export class HaulerRepository implements IHaulerRepository {
   getCreeps(spawnId: string): HaulerCreep[] {
     return Object.values(Game.creeps).filter(
       (creep: Creep) => creep.memory.role === CreepRole.Hauler && creep.memory.spawnId === spawnId
+    ) as HaulerCreep[];
+  }
+
+  getAllCreeps(): HaulerCreep[] {
+    return Object.values(Game.creeps).filter(
+      (creep: Creep) => creep.memory.role === CreepRole.Hauler && creep.memory.state !== HaulerState.Recycling
     ) as HaulerCreep[];
   }
 

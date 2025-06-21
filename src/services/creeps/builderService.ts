@@ -115,10 +115,16 @@ class BuilderService extends ABaseService<BuilderCreep> {
   private doBuild(creep: BuilderCreep): void {
     const buildFlag = findFlag(FlagType.Build);
     const targetPos = buildFlag?.pos || creep.pos;
-    if (targetPos.roomName !== creep.room.name) {
+    const originalRoom = (Game.getObjectById(creep.memory.spawnId) as StructureSpawn).pos;
+
+    if (
+      (buildFlag && targetPos.roomName !== creep.room.name) ||
+      (!buildFlag && targetPos.roomName !== originalRoom.roomName)
+    ) {
       this.move(creep, targetPos);
       return;
     }
+
     const target = targetPos.findClosestByRange(FIND_CONSTRUCTION_SITES, {
       filter: site => {
         switch (site.structureType) {

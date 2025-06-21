@@ -1,7 +1,7 @@
 import { CreepRole, HaulerCreep, HaulerMemory, HaulerState } from "models";
 import { findRepository, haulerRepository, IFindRepository, IHaulerRepository, THaulerContainer } from "repositories";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
-import { getUniqueId, recordCountToArray } from "utils";
+import { getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
 
 export class HaulerService extends ABaseService<HaulerCreep> {
   MIN_CREEPS_TTL = 60;
@@ -17,54 +17,21 @@ export class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   override needMoreCreeps(): boolean {
-    const haulersCount = this.haulerRepository.getAllCreeps().length;
-    const haulerContainers = this.findRepository.findAllHaulerContainers();
-    // TODO Refactor into repository method
-    let maxHaulers = 0;
-    for (const haulerContainer of haulerContainers) {
-      const roomName = haulerContainer.room.name;
-      const { hauler } = roomServiceConfig[roomName] || roomServiceConfig.external;
-      maxHaulers += hauler?.maxCreepsPerSource ?? 1;
-    }
-    return haulersCount < maxHaulers;
+    return this.findRepository.findAvailableHaulerContainers().length > 0;
   }
 
-  containerCache: Record<string, Record<string, number>> = {};
-
-  private findClosestSpawn(spawns: StructureSpawn[], haulerContainer: THaulerContainer) {
-    let maxCost = Number.MAX_SAFE_INTEGER;
-    let closestAvailableSpawn = null;
-    for (const spawn of spawns) {
-      let cost = this.containerCache[spawn.id]?.[haulerContainer.id];
-
-      if (!cost) {
-        const path = PathFinder.search(spawn.pos, haulerContainer.pos);
-        this.containerCache[spawn.id] = this.containerCache[spawn.id] || {};
-        this.containerCache[spawn.id][haulerContainer.id] = path.cost;
-        cost = path.cost;
-      }
-
-      if (cost < maxCost) {
-        maxCost = cost;
-        closestAvailableSpawn = spawn;
-      }
-    }
-    return closestAvailableSpawn;
-  }
   override spawn(): TSpawnCreepResponse {
     const name = `hauler-${getUniqueId()}`;
     const haulerContainers = this.findRepository.findAvailableHaulerContainers();
     for (const haulerContainer of haulerContainers) {
-      const allSpawns = Object.values(Game.spawns);
-      const availableSpawns = allSpawns.filter(spawn => !spawn.spawning);
-      const closestAvailableSpawn = this.findClosestSpawn(availableSpawns, haulerContainer);
-      if (!closestAvailableSpawn) return ERR_BUSY;
+      const result = this.findRepository.findClosestSpawnOfTarget(haulerContainer);
+      if (!result) return ERR_BUSY;
 
-      const closestSpawn = this.findClosestSpawn(allSpawns, haulerContainer)!;
+      const { closestSpawn, closestAvailableSpawn } = result;
 
-      const { hauler } = roomServiceConfig[closestAvailableSpawn.room.name] || roomServiceConfig.default;
+      const haulerConfig = getCreepConfigPerRoom(CreepRole.Hauler, closestAvailableSpawn.room);
 
-      closestAvailableSpawn.spawnCreep(recordCountToArray(hauler!.bodyParts), name, {
+      closestAvailableSpawn.spawnCreep(recordCountToArray(haulerConfig.bodyParts), name, {
         memory: {
           role: CreepRole.Hauler,
           spawnId: closestSpawn.id,

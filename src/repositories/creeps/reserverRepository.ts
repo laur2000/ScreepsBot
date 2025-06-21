@@ -1,4 +1,4 @@
-import { CreepRole, ReserverCreep } from "models";
+import { CreepRole, FlagType, ReserverCreep } from "models";
 import { IRepository } from "repositories";
 
 export interface IReserverRepository extends IRepository<ReserverCreep> {
@@ -24,7 +24,7 @@ export class ReserverRepository implements IReserverRepository {
   }
 
   getReserveFlags(): Flag[] {
-    return Object.values(Game.flags).filter(flag => flag.name === "reserve");
+    return Object.values(Game.flags).filter(flag => flag.name === FlagType.Reserve);
   }
 }
 

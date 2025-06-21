@@ -1,37 +1,44 @@
 import { CreepRole, HarvesterCreep, HarvesterMemory, HarvesterState } from "models";
 import { harvesterRepository, IHarvesterRepository, IFindRepository, findRepository } from "repositories";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
-import { getUniqueId, recordCountToArray } from "utils";
+import { getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
 
-class HarvesterService extends ABaseService<HarvesterCreep> {
+export class HarvesterService extends ABaseService<HarvesterCreep> {
   constructor(private harvesterRepository: IHarvesterRepository, private findRepository: IFindRepository) {
     super(harvesterRepository);
   }
   MAX_CREEPS_PER_SOURCE = 2;
   MIN_CREEPS_TTL = 60;
 
-  needMoreCreeps(spawn: StructureSpawn): boolean {
-    const { harvester } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
-    const creepCount = this.harvesterRepository.countCreepsInSpawn(spawn.id);
-    const sourcesCount = this.findRepository.sourcesCount(spawn.room);
-    const harvestFlags = this.harvesterRepository.countHarvestFlags();
-    const maxCreeps = (harvestFlags + sourcesCount) * (harvester?.maxCreepsPerSource || 1);
-
-    return creepCount < maxCreeps;
+  needMoreCreeps(): boolean {
+    return this.findRepository.findAvailableHarvesterSources().length > 0;
   }
 
-  override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    const { harvester } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
-    const harvesterName = `harvester-${spawn.name}-${getUniqueId()}`;
-    const res = spawn.spawnCreep(recordCountToArray(harvester!.bodyParts), harvesterName, {
-      memory: { role: CreepRole.Harvester, spawnId: spawn.id, state: HarvesterState.Harvesting } as HarvesterMemory
-    });
+  override spawn(): TSpawnCreepResponse {
+    const name = `harvester-${getUniqueId()}`;
+    const harvesterSources = this.findRepository.findAvailableHarvesterSources();
+    for (const harvesterSource of harvesterSources) {
+      const result = this.findRepository.findClosestSpawnOfTarget(harvesterSource);
+      if (!result) return ERR_BUSY;
 
-    return res as TSpawnCreepResponse;
+      const { closestSpawn, closestAvailableSpawn } = result;
+
+      const harvesterConfig = getCreepConfigPerRoom(CreepRole.Harvester, closestAvailableSpawn.room);
+
+      closestAvailableSpawn.spawnCreep(recordCountToArray(harvesterConfig.bodyParts), name, {
+        memory: {
+          role: CreepRole.Harvester,
+          spawnId: closestSpawn.id,
+          state: HarvesterState.Harvesting,
+          harvestTargetId: harvesterSource.id
+        } as HarvesterMemory
+      });
+    }
+
+    return OK;
   }
 
   override execute(harvester: HarvesterCreep): void {
-    this.assignSource(harvester);
     this.updateHarvesterState(harvester);
     this.executeHarvesterState(harvester);
   }
@@ -70,15 +77,6 @@ class HarvesterService extends ABaseService<HarvesterCreep> {
       case HarvesterState.Recycling:
         this.doRecycle(creep);
         break;
-    }
-  }
-
-  private assignSource(creep: HarvesterCreep): void {
-    if (creep.memory.harvestTargetId) return;
-    const { harvester } = roomServiceConfig[creep.room.name] || roomServiceConfig.default;
-    const sources = this.findRepository.findAvailableSources(creep.room, harvester?.maxCreepsPerSource ?? 1);
-    if (sources[0]) {
-      creep.memory.harvestTargetId = sources[0].id;
     }
   }
 

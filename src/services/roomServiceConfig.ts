@@ -1,20 +1,14 @@
 import { CreepBodyPart, CreepRole } from "models";
 
 export const USER_NAME = "xXSefuXx";
-export const roomServiceConfig: Record<
-  string,
-  Partial<
-    Record<
-      CreepRole,
-      {
-        maxCreepsPerSource?: number;
-        maxCreeps?: number;
-        bodyParts: Partial<Record<CreepBodyPart, number>>;
-        useBoost: boolean;
-      }
-    >
-  >
-> = {
+export interface RoomServiceConfig {
+  maxCreepsPerSource?: number;
+  maxCreeps?: number;
+  bodyParts: Partial<Record<CreepBodyPart, number>>;
+  useBoost: boolean;
+}
+
+export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomServiceConfig>>> = {
   W8S35: {
     harvester: {
       maxCreepsPerSource: 2,
@@ -56,13 +50,13 @@ export const roomServiceConfig: Record<
       useBoost: false
     },
     builder: {
-      maxCreeps: 4,
+      maxCreeps: 5,
       bodyParts: { [CreepBodyPart.Work]: 7, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 6 },
       useBoost: false
     },
     transporter: {
-      maxCreeps: 2,
-      bodyParts: { [CreepBodyPart.Carry]: 6, [CreepBodyPart.Move]: 3 },
+      maxCreeps: 3,
+      bodyParts: { [CreepBodyPart.Carry]: 8, [CreepBodyPart.Move]: 4 },
       useBoost: false
     },
     hauler: {

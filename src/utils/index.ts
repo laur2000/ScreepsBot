@@ -1,3 +1,6 @@
+import { CreepRole } from "models";
+import { RoomServiceConfig, roomServiceConfig } from "services";
+
 export function recordCountToArray<T extends string | number | symbol>(record: Partial<Record<T, number>>): T[] {
   const res: T[] = [];
   for (const [key, count] of Object.entries(record)) {
@@ -57,6 +60,21 @@ Creep.prototype.findClosestByPriority = function (types, opts) {
   );
 };
 
+export function getVisibleFlaggedRooms(flagName?: string) {
+  const flags = Object.values(Game.flags).filter(flag => !flagName || flag.name === flagName);
+  const rooms = flags.map(flag => flag.room).filter(room => !!room) as Room[];
+  return rooms;
+}
+
+export function getMaxCreepsPerTarget(role: CreepRole, target: { room: Room }) {
+  const config = getCreepConfigPerRoom(role, target.room);
+  return config.maxCreepsPerSource ?? 1;
+}
+
+export function getCreepConfigPerRoom(role: CreepRole, room: Room) {
+  const config = roomServiceConfig[room.name]?.[role] || roomServiceConfig.default[role];
+  return config as RoomServiceConfig;
+}
 export * from "./config";
 export * from "./ErrorMapper";
 export * from "./Traveler";

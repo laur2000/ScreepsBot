@@ -1,4 +1,4 @@
-import { ClaimerCreep, CreepRole } from "models";
+import { ClaimerCreep, CreepRole, FlagType } from "models";
 import { IRepository } from "repositories";
 
 export interface IClaimerRepository extends IRepository<ClaimerCreep> {
@@ -19,7 +19,7 @@ export class ClaimerRepository implements IClaimerRepository {
   }
 
   countClaimFlags(): number {
-    return Object.values(Game.flags).filter(flag => flag.name === "claim").length;
+    return Object.values(Game.flags).filter(flag => flag.name === FlagType.Claim).length;
   }
 }
 

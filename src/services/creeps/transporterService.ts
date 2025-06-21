@@ -129,12 +129,10 @@ class TransporterService extends ABaseService<TransporterCreep> {
     });
     if (!target) return;
 
-    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
-    } else if (creep.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
-      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_HYDROGEN), target);
-    } else if (creep.store.getUsedCapacity(RESOURCE_CATALYZED_GHODIUM_ACID) > 0) {
-      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_CATALYZED_GHODIUM_ACID), target);
+    for (const resourceType in creep.store) {
+      if (creep.store.getUsedCapacity(resourceType as ResourceConstant) > 0) {
+        this.actionOrMove(creep, () => creep.transfer(target, resourceType as ResourceConstant), target);
+      }
     }
   }
   private assignSource(creep: TransporterCreep): void {
@@ -164,10 +162,15 @@ class TransporterService extends ABaseService<TransporterCreep> {
       this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
     } else if (target.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
       this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_HYDROGEN), target);
+    } else if (creep.room.terminal && creep.room.terminal.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
+      this.actionOrMove(creep, () => creep.withdraw(creep.room.terminal!, RESOURCE_ENERGY), creep.room.terminal);
     } else {
-      const terminal = creep.room.terminal;
-      if (!terminal || terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) return;
-      this.actionOrMove(creep, () => creep.withdraw(terminal, RESOURCE_ENERGY), terminal);
+      const storage = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: structure =>
+          structure.structureType === STRUCTURE_STORAGE && structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+      });
+      if (!storage) return;
+      this.actionOrMove(creep, () => creep.withdraw(storage, RESOURCE_ENERGY), storage);
     }
   }
 }

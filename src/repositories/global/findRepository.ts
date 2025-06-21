@@ -1,3 +1,4 @@
+import { CreepRole } from "models";
 import {
   harvesterRepository,
   haulerRepository,
@@ -7,13 +8,24 @@ import {
   transporterRepository
 } from "repositories/creeps";
 import { roomServiceConfig } from "services/roomServiceConfig";
+import { getMaxCreepsPerTarget, getVisibleFlaggedRooms } from "utils";
 
 export type THaulerContainer = StructureContainer | StructureLink;
+export type THarvesterSource = Source | Mineral;
+export type TTarget = _HasId & HasPos;
+export type TClosestSpawns = {
+  closestSpawn: StructureSpawn;
+  closestAvailableSpawn: StructureSpawn;
+};
+
 export interface IFindRepository {
-  findAvailableSources(room: Room, max: number): (Source | Mineral)[];
   findAvailableContainers(room: Room, max: number): StructureContainer[];
   findAvailableHaulerContainers(): THaulerContainer[];
-  findAllHaulerContainers(): THaulerContainer[];
+  // findAllHaulerContainers(): THaulerContainer[];
+  findAvailableHarvesterSources(): THarvesterSource[];
+  // findAllHarvesterSources(): THarvesterSource[];
+  findClosestSpawn(spawns: StructureSpawn[], target: TTarget): StructureSpawn | null;
+  findClosestSpawnOfTarget(target: TTarget): TClosestSpawns | null;
   sourcesCount(room: Room): number;
   containersCount(room: Room): number;
 }
@@ -25,41 +37,9 @@ export class FindRepository implements IFindRepository {
     private haulerRepository: IHaulerRepository
   ) {}
 
-  findAvailableSources(room: Room, max: number) {
-    const sourcesCount = this.harvesterRepository.countCreepsBySource();
-    const harvestFlags = Object.values(Game.flags).filter(flag => flag.name === "harvest");
-    const rooms = [room, ...harvestFlags.map(flag => flag.room)].filter(room => !!room) as Room[];
-
-    const sources = rooms.flatMap(room =>
-      room.find(FIND_SOURCES, {
-        filter: source => {
-          const count = sourcesCount[source.id] || 0;
-          return count < max;
-        }
-      })
-    );
-
-    const minerals = rooms.flatMap(room =>
-      room.find(FIND_MINERALS, {
-        filter: mineral => {
-          if (mineral.mineralAmount === 0) return false;
-          const extractor = mineral.pos
-            .lookFor(LOOK_STRUCTURES)
-            .find(structure => structure.structureType === STRUCTURE_EXTRACTOR);
-          if (!extractor) return false;
-          const count = sourcesCount[mineral.id] || 0;
-          return count < max;
-        }
-      })
-    );
-
-    return [...sources, ...minerals];
-  }
-
   findAvailableContainers(room: Room, max: number) {
     const containersCount = this.transporterRepository.countCreepsByTargetId();
-    const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "container");
-    const rooms = [room, ...containerFlags.map(flag => flag.room)].filter(room => !!room) as Room[];
+    const rooms = [room, ...getVisibleFlaggedRooms("container")];
     return rooms.flatMap(room =>
       room.find(FIND_STRUCTURES, {
         filter: structure => {
@@ -85,9 +65,7 @@ export class FindRepository implements IFindRepository {
 
   findAvailableHaulerContainers() {
     const containersCount = this.haulerRepository.countCreepsByTargetId();
-    const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "hauler_container");
-    const rooms = containerFlags.map(flag => flag.room).filter(room => !!room) as Room[];
-    return rooms.flatMap(room =>
+    return getVisibleFlaggedRooms("hauler_container").flatMap(room =>
       room.find(FIND_STRUCTURES, {
         filter: structure => {
           switch (structure.structureType) {
@@ -113,25 +91,109 @@ export class FindRepository implements IFindRepository {
     ) as THaulerContainer[];
   }
 
-  findAllHaulerContainers(): THaulerContainer[] {
-    const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "hauler_container");
-    const rooms = containerFlags.map(flag => flag.room).filter(room => !!room) as Room[];
-    return rooms.flatMap(room =>
-      room.find(FIND_STRUCTURES, {
-        filter: structure => {
-          switch (structure.structureType) {
-            case STRUCTURE_CONTAINER:
-              return true;
-            case STRUCTURE_LINK:
-              const linkMemory = Memory.links?.[structure.id] || {};
-              return linkMemory.isContainer;
-            default:
-              return false;
-          }
+  // findAllHaulerContainers(): THaulerContainer[] {
+  //   return getVisibleFlaggedRooms("hauler_container").flatMap(room =>
+  //     room.find(FIND_STRUCTURES, {
+  //       filter: structure => {
+  //         switch (structure.structureType) {
+  //           case STRUCTURE_CONTAINER:
+  //             return true;
+  //           case STRUCTURE_LINK:
+  //             const linkMemory = Memory.links?.[structure.id] || {};
+  //             return linkMemory.isContainer;
+  //           default:
+  //             return false;
+  //         }
+  //       }
+  //     })
+  //   ) as THaulerContainer[];
+  // }
+
+  findAvailableHarvesterSources() {
+    const sourcesCount = this.harvesterRepository.countCreepsBySource();
+    const rooms = getVisibleFlaggedRooms("harvest");
+
+    const sources = rooms.flatMap(room =>
+      room.find(FIND_SOURCES, {
+        filter: source => {
+          const count = sourcesCount[source.id] ?? 0;
+          const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, source);
+          return count < maxCreeps;
         }
       })
-    ) as THaulerContainer[];
+    );
+
+    const minerals = rooms.flatMap(room =>
+      room.find(FIND_MINERALS, {
+        filter: mineral => {
+          if (mineral.mineralAmount === 0) return false;
+
+          const extractor = mineral.pos
+            .lookFor(LOOK_STRUCTURES)
+            .find(structure => structure.structureType === STRUCTURE_EXTRACTOR);
+
+          if (!extractor) return false;
+
+          const count = sourcesCount[mineral.id] || 0;
+          const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, extractor);
+
+          return count < maxCreeps;
+        }
+      })
+    );
+
+    return [...sources, ...minerals];
   }
+
+  // findAllHarvesterSources(): (Source | Mineral)[] {
+  //   const rooms = getVisibleFlaggedRooms("harvest");
+  //   const sources = rooms.flatMap(room => room.find(FIND_SOURCES));
+  //   const minerals = rooms.flatMap(room =>
+  //     room.find(FIND_MINERALS, {
+  //       filter: mineral => {
+  //         const extractor = mineral.pos
+  //           .lookFor(LOOK_STRUCTURES)
+  //           .find(structure => structure.structureType === STRUCTURE_EXTRACTOR);
+  //         return !!extractor;
+  //       }
+  //     })
+  //   );
+  //   return [...sources, ...minerals];
+  // }
+
+  private targetCostCache: Record<string, Record<string, number>> = {};
+  findClosestSpawn(spawns: StructureSpawn[], target: TTarget) {
+    let maxCost = Number.MAX_SAFE_INTEGER;
+    let closestSpawn = null;
+    for (const spawn of spawns) {
+      let cost = this.targetCostCache[spawn.id]?.[target.id];
+
+      if (!cost) {
+        const path = PathFinder.search(spawn.pos, target.pos);
+        this.targetCostCache[spawn.id] = this.targetCostCache[spawn.id] || {};
+        this.targetCostCache[spawn.id][target.id] = path.cost;
+        cost = path.cost;
+      }
+
+      if (cost < maxCost) {
+        maxCost = cost;
+        closestSpawn = spawn;
+      }
+    }
+    return closestSpawn;
+  }
+
+  findClosestSpawnOfTarget(target: TTarget) {
+    const allSpawns = Object.values(Game.spawns);
+    // TODO  Also check if energyAvailable in room is enough to spawn target
+    const availableSpawns = allSpawns.filter(spawn => !spawn.spawning);
+    const closestAvailableSpawn = this.findClosestSpawn(availableSpawns, target);
+    if (!closestAvailableSpawn) return null;
+
+    const closestSpawn = this.findClosestSpawn(allSpawns, target)!;
+    return { closestSpawn, closestAvailableSpawn };
+  }
+
   sourcesCount(room: Room): number {
     const sourcesCount = room.find(FIND_SOURCES).length;
     const extractorCount = room.find(FIND_STRUCTURES, {

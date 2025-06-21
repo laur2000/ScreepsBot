@@ -1,4 +1,4 @@
-import { CreepRole } from "models";
+import { CreepRole, FlagType } from "models";
 import {
   harvesterRepository,
   haulerRepository,
@@ -39,7 +39,7 @@ export class FindRepository implements IFindRepository {
 
   findAvailableContainers(room: Room, max: number) {
     const containersCount = this.transporterRepository.countCreepsByTargetId();
-    const rooms = [room, ...getVisibleFlaggedRooms("container")];
+    const rooms = [room, ...getVisibleFlaggedRooms(FlagType.Container)];
     return rooms.flatMap(room =>
       room.find(FIND_STRUCTURES, {
         filter: structure => {
@@ -65,7 +65,7 @@ export class FindRepository implements IFindRepository {
 
   findAvailableHaulerContainers() {
     const containersCount = this.haulerRepository.countCreepsByTargetId();
-    return getVisibleFlaggedRooms("hauler_container").flatMap(room =>
+    return getVisibleFlaggedRooms(FlagType.HaulerContainer).flatMap(room =>
       room.find(FIND_STRUCTURES, {
         filter: structure => {
           switch (structure.structureType) {
@@ -111,7 +111,7 @@ export class FindRepository implements IFindRepository {
 
   findAvailableHarvesterSources() {
     const sourcesCount = this.harvesterRepository.countCreepsBySource();
-    const rooms = getVisibleFlaggedRooms("harvest");
+    const rooms = getVisibleFlaggedRooms(FlagType.Harvest);
 
     const sources = rooms.flatMap(room =>
       room.find(FIND_SOURCES, {

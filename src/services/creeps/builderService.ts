@@ -1,7 +1,7 @@
 import { IRepository, builderRepository, findRepository, IFindRepository } from "repositories";
-import { getUniqueId, recordCountToArray } from "utils";
+import { findFlag, getUniqueId, recordCountToArray } from "utils";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
-import { BuilderCreep, BuilderMemory, BuilderState, CreepBodyPart, CreepRole } from "models";
+import { BuilderCreep, BuilderMemory, BuilderState, CreepBodyPart, CreepRole, FlagType } from "models";
 
 class BuilderService extends ABaseService<BuilderCreep> {
   MAX_CREEPS_PER_SOURCE = 1;
@@ -88,7 +88,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
     }
 
     const [boostFlag] = creep.room.find(FIND_FLAGS, {
-      filter: flag => flag.name === "builder,boost"
+      filter: flag => flag.name.startsWith("builder,boost")
     });
     if (!boostFlag) return;
     const lab = boostFlag.pos.lookFor(LOOK_STRUCTURES)[0] as StructureLab | undefined;
@@ -98,7 +98,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
 
   private doBoost(creep: BuilderCreep): void {
     const [boostFlag] = creep.room.find(FIND_FLAGS, {
-      filter: flag => flag.name === "builder,boost"
+      filter: flag => flag.name.startsWith("builder,boost")
     });
     if (!boostFlag) return;
     const lab = boostFlag.pos.lookFor(LOOK_STRUCTURES)[0] as StructureLab | undefined;
@@ -107,13 +107,13 @@ class BuilderService extends ABaseService<BuilderCreep> {
     const err = this.actionOrMove(creep, () => lab.boostCreep(creep), lab);
 
     if (err !== ERR_NOT_IN_RANGE) {
-      console.log("error boosting creep: ", creep.name, err);
+      // TODO Creep tries to boost immediately after starting to spawn and fails
       creep.memory.state = BuilderState.Collecting;
     }
   }
 
   private doBuild(creep: BuilderCreep): void {
-    const buildFlag = Object.values(Game.flags).find(flag => flag.name === "build");
+    const buildFlag = findFlag(FlagType.Build);
     const targetPos = buildFlag?.pos || creep.pos;
     if (targetPos.roomName !== creep.room.name) {
       this.move(creep, targetPos);
@@ -164,7 +164,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
       return;
     }
     if (!target) {
-      const buildFlag = Object.values(Game.flags).find(flag => flag.name === "build");
+      const buildFlag = findFlag(FlagType.Build);
       if (!buildFlag) return;
       const source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
       if (!source) return;

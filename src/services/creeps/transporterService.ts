@@ -1,7 +1,7 @@
-import { CreepRole, TransporterCreep, TransporterMemory, TransporterState } from "models";
+import { CreepRole, FlagType, TransporterCreep, TransporterMemory, TransporterState } from "models";
 import { findRepository, IFindRepository, ITransporterRepository, transporterRepository } from "repositories";
 import { ABaseService, TSpawnCreepResponse, roomServiceConfig } from "services";
-import { getUniqueId, recordCountToArray } from "utils";
+import { findFlags, getUniqueId, recordCountToArray } from "utils";
 
 class TransporterService extends ABaseService<TransporterCreep> {
   MIN_CREEPS_TTL = 60;
@@ -21,7 +21,7 @@ class TransporterService extends ABaseService<TransporterCreep> {
 
     const creepCount = this.transporterRepository.countCreepsInSpawn(spawn.id);
     const containersCount = this.findRepository.containersCount(spawn.room);
-    const containerFlags = Object.values(Game.flags).filter(flag => flag.name === "container").length;
+    const containerFlags = findFlags(FlagType.Container).length;
     const maxCreeps = (containerFlags + containersCount) * this.MAX_CREEPS_PER_CONTAINER;
     return creepCount < (transporter?.maxCreeps || 1);
   }

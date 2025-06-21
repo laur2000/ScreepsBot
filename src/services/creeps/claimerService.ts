@@ -1,5 +1,5 @@
 import { claimerRepository, IClaimerRepository } from "repositories";
-import { getUniqueId, recordCountToArray } from "utils";
+import { findFlag, getUniqueId, recordCountToArray } from "utils";
 import { ClaimerCreep, ClaimerMemory, ClaimerState, CreepBodyPart, CreepRole, FlagType } from "models";
 import { ABaseService, TSpawnCreepResponse } from "services";
 class ClaimerService extends ABaseService<ClaimerCreep> {
@@ -43,7 +43,7 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
         }
         break;
       case ClaimerState.Claiming:
-        const claimFlag = Object.values(Game.flags).find(flag => flag.name === FlagType.Claim);
+        const claimFlag = findFlag(FlagType.Claim);
         const isControllerClaimed = claimFlag?.room?.controller?.my;
         if (isControllerClaimed) {
           creep.memory.state = ClaimerState.Upgrading;
@@ -51,7 +51,7 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
         break;
       case ClaimerState.Upgrading:
         if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-          const claimFlag = Object.values(Game.flags).find(flag => flag.name === FlagType.Claim);
+          const claimFlag = findFlag(FlagType.Claim);
           claimFlag?.remove();
           creep.memory.state = ClaimerState.Recycling;
         }
@@ -96,14 +96,14 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
   }
 
   private doUpgrade(creep: ClaimerCreep): void {
-    const claimFlag = Object.values(Game.flags).find(flag => flag.name === FlagType.Claim);
+    const claimFlag = findFlag(FlagType.Claim);
     const controller = claimFlag?.room?.controller;
     if (!controller) return;
     this.actionOrMove(creep, () => creep.upgradeController(controller), controller);
   }
 
   private doClaim(creep: ClaimerCreep): void {
-    const claimFlag = Object.values(Game.flags).find(flag => flag.name === FlagType.Claim);
+    const claimFlag = findFlag(FlagType.Claim);
 
     if (!claimFlag) return;
 

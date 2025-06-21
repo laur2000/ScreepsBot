@@ -1,5 +1,6 @@
 import { CreepRole, FlagType, ReserverCreep } from "models";
 import { IRepository } from "repositories";
+import { findFlags } from "utils";
 
 export interface IReserverRepository extends IRepository<ReserverCreep> {
   countReserveFlags(): number;
@@ -24,7 +25,7 @@ export class ReserverRepository implements IReserverRepository {
   }
 
   getReserveFlags(): Flag[] {
-    return Object.values(Game.flags).filter(flag => flag.name === FlagType.Reserve);
+    return findFlags(FlagType.Reserve);
   }
 }
 

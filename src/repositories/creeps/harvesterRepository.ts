@@ -1,5 +1,6 @@
 import { CreepRole, FlagType, HarvesterCreep, HarvesterState } from "models";
 import { IRepository } from "repositories";
+import { findFlags } from "utils";
 
 export interface IHarvesterRepository extends IRepository<HarvesterCreep> {
   countCreepsBySource(): Record<string, number>;
@@ -50,7 +51,7 @@ export class HarvesterRepository implements IHarvesterRepository {
   }
 
   countHarvestFlags(): number {
-    return Object.values(Game.flags).filter(flag => flag.name === FlagType.Harvest).length;
+    return findFlags(FlagType.Harvest).length;
   }
 }
 

@@ -1,17 +1,17 @@
-import { IController } from "./controller";
-import { builderService } from "../services/builderService";
 import { IService } from "services/service";
 import { BuilderCreep } from "repositories/builderRepository";
+import { IController } from "controllers/controller";
+import { builderService } from "services/builderService";
 class BuilderController implements IController {
   public constructor(private builderService: IService<BuilderCreep>) {}
   run(): void {
     for (const spawn of Object.values(Game.spawns)) {
-      if (builderService.needMoreCreeps(spawn)) {
-        builderService.spawn(spawn);
+      if (this.builderService.needMoreCreeps(spawn)) {
+        this.builderService.spawn(spawn);
       }
 
-      for (const builder of builderService.getCreeps(spawn)) {
-        builderService.execute(builder);
+      for (const builder of this.builderService.getCreeps(spawn)) {
+        this.builderService.execute(builder);
       }
     }
   }

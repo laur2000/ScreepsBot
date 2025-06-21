@@ -1,6 +1,5 @@
-import { IService } from "services/service";
-import { IController } from "./controller";
-import { HarvesterCreep } from "repositories/harvesterRepository";
+import { IController } from "controllers/controller";
+
 
 class GarbageCollectorController implements IController {
   run(): void {

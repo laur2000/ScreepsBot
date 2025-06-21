@@ -1,5 +1,5 @@
 import { IService } from "services/service";
-import { IController } from "./controller";
+import { IController } from "../controller";
 import { HaulerCreep } from "repositories/haulerRepository";
 import { HaulerService, haulerService } from "services/haulerService";
 

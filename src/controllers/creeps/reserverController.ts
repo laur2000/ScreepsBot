@@ -1,4 +1,4 @@
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 import { IService } from "services/service";
 import { reserverService } from "services/reserverService";
 import { ReserverCreep } from "repositories/reserverRepository";

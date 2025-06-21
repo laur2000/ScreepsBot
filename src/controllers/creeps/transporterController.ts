@@ -1,5 +1,5 @@
 import { TransporterCreep } from "repositories/transporterRepository";
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 import { IService } from "services/service";
 import { transporterService } from "services/transporterService";
 class TransporterController implements IController {

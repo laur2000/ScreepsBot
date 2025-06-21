@@ -1,4 +1,4 @@
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 import { ILinkService, linkService } from "services/linkService";
 
 class LinkController implements IController {

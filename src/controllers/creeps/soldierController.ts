@@ -1,5 +1,5 @@
 import { IService } from "services/service";
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 import { SoldierCreep } from "repositories/soldierRepository";
 import { soldierService } from "services/soldierService";
 

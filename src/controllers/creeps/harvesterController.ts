@@ -1,5 +1,5 @@
 import { IService } from "services/service";
-import { IController } from "./controller";
+import { IController } from "../controller";
 import { HarvesterCreep } from "repositories/harvesterRepository";
 import { harvesterService } from "services/harvesterService";
 

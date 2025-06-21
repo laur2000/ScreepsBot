@@ -1,5 +1,5 @@
 import { ClaimerCreep } from "repositories/claimerRepository";
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 import { IService } from "services/service";
 import { claimerService } from "services/claimerService";
 class ClaimerController implements IController {

@@ -1,4 +1,4 @@
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 
 class PixelController implements IController {
   run(): void {

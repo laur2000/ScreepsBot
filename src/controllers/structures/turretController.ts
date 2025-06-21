@@ -1,4 +1,4 @@
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 
 class TurretController implements IController {
   run(): void {

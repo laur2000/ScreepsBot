@@ -1,6 +1,6 @@
-import { IController } from "./controller";
+import { IController } from "controllers/controller";
 
-class MarketController implements IController {
+class TerminalController implements IController {
   run(): void {
     for (const terminalId in Memory.terminals) {
       const transactions = Memory.terminals[terminalId].transactions;
@@ -27,4 +27,4 @@ class MarketController implements IController {
     }
   }
 }
-export const marketController = new MarketController();
+export const terminalController = new TerminalController();

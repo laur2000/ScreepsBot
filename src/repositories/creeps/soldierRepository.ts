@@ -1,19 +1,5 @@
-import { CreepRole, IRepository } from "./repository";
-
-export enum SoldierState {
-  Attacking = "attacking",
-  Recycling = "recycling"
-}
-
-export interface SoldierCreep extends Creep {
-  memory: SoldierMemory;
-}
-
-export interface SoldierMemory {
-  role: CreepRole.Soldier;
-  spawnId: string;
-  state: SoldierState;
-}
+import { CreepRole, SoldierCreep } from "models";
+import { IRepository } from "repositories";
 
 export interface ISoldierRepository extends IRepository<SoldierCreep> {
   countEnemiesInRooms(): number;

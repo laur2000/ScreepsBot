@@ -1,14 +1,9 @@
-import {
-  SoldierCreep,
-  SoldierMemory,
-  soldierRepository,
-  SoldierState,
-  ISoldierRepository
-} from "repositories/soldierRepository";
-import { ABaseService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { CreepRole, SoldierCreep, SoldierMemory, SoldierState } from "models";
+import { ISoldierRepository, soldierRepository } from "repositories";
+import { roomServiceConfig } from "services/roomServiceConfig";
+import { ABaseService, TSpawnCreepResponse } from "services";
 import { getUniqueId, recordCountToArray } from "utils";
-import { roomServiceConfig } from "./roomServiceConfig";
+
 class SoldierService extends ABaseService<SoldierCreep> {
   MIN_CREEPS_TTL = 60;
   public constructor(private soldierRepository: ISoldierRepository) {

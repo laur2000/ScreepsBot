@@ -1,4 +1,4 @@
-import { IController } from "controllers/controller";
+import { IController } from "controllers";
 
 
 class GarbageCollectorController implements IController {

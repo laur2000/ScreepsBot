@@ -1,13 +1,7 @@
-import {
-  ClaimerCreep,
-  ClaimerMemory,
-  claimerRepository,
-  ClaimerState,
-  IClaimerRepository
-} from "repositories/claimerRepository";
-import { ABaseService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { claimerRepository, IClaimerRepository } from "repositories";
 import { getUniqueId, recordCountToArray } from "utils";
+import { ClaimerCreep, ClaimerMemory, ClaimerState, CreepBodyPart, CreepRole } from "models";
+import { ABaseService, TSpawnCreepResponse } from "services";
 class ClaimerService extends ABaseService<ClaimerCreep> {
   MIN_CREEPS_TTL = 60;
   public constructor(private claimerRepository: IClaimerRepository) {

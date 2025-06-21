@@ -1,21 +1,5 @@
-import { CreepRole, IRepository } from "./repository";
-
-export enum HarvesterState {
-  Harvesting = "harvesting",
-  Transferring = "transferring",
-  Recycling = "recycling"
-}
-
-export interface HarvesterCreep extends Creep {
-  memory: HarvesterMemory;
-}
-
-export interface HarvesterMemory {
-  role: CreepRole.Harvester;
-  spawnId: string;
-  state: HarvesterState;
-  harvestTargetId?: string | null;
-}
+import { CreepRole, HarvesterCreep, HarvesterState } from "models";
+import { IRepository } from "repositories";
 
 export interface IHarvesterRepository extends IRepository<HarvesterCreep> {
   countCreepsBySource(): Record<string, number>;
@@ -67,14 +51,3 @@ export class HarvesterRepository implements IHarvesterRepository {
 }
 
 export const harvesterRepository = new HarvesterRepository();
-
-// const HarvesterBodyPartEnergyMapper = {
-//   300: [WORK, WORK, CARRY, MOVE],
-//   350: [WORK, WORK, CARRY, CARRY, MOVE],
-//   400: [WORK, WORK, CARRY, CARRY, MOVE, MOVE],
-//   450: [WORK, WORK, WORK, CARRY, CARRY, MOVE],
-//   500: [WORK, WORK, WORK, CARRY, CARRY, MOVE],
-//   550: [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE],
-//   600: [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE],
-//   650: [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE],
-// }

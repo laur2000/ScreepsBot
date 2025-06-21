@@ -1,7 +1,7 @@
-import { TransporterCreep } from "repositories/transporterRepository";
-import { IController } from "controllers/controller";
-import { IService } from "services/service";
-import { transporterService } from "services/transporterService";
+import { IController } from "controllers";
+import { TransporterCreep } from "models";
+import { IService, transporterService } from "services";
+
 class TransporterController implements IController {
   public constructor(private transporterService: IService<TransporterCreep>) {}
   run(): void {

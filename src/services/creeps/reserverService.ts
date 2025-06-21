@@ -1,14 +1,7 @@
-import {
-  ReserverCreep,
-  ReserverMemory,
-  reserverRepository,
-  ReserverState,
-  IReserverRepository
-} from "repositories/reserverRepository";
-import { ABaseService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { CreepRole, ReserverCreep, ReserverMemory, ReserverState } from "models";
+import { reserverRepository, IReserverRepository } from "repositories";
+import { roomServiceConfig, ABaseService, TSpawnCreepResponse, USER_NAME } from "services";
 import { getUniqueId, recordCountToArray } from "utils";
-import { roomServiceConfig, USER_NAME } from "./roomServiceConfig";
 class ReserverService extends ABaseService<ReserverCreep> {
   MIN_CREEPS_TTL = 60;
   public constructor(private reserverRepository: IReserverRepository) {

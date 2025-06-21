@@ -1,7 +1,5 @@
-import { IService } from "services/service";
-import { IController } from "../controller";
-import { HaulerCreep } from "repositories/haulerRepository";
-import { HaulerService, haulerService } from "services/haulerService";
+import { IController } from "controllers";
+import { haulerService, HaulerService } from "services";
 
 class HaulerController implements IController {
   constructor(private haulerService: HaulerService) {}

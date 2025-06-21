@@ -1,4 +1,4 @@
-import { ILinkRepository, linkRepository } from "repositories/linkRepository";
+import { ILinkRepository, linkRepository } from "repositories";
 
 export interface ILinkService {
   getRoomLinks(room: Room): StructureLink[];

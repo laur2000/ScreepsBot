@@ -1,7 +1,7 @@
-import { IService } from "services/service";
-import { BuilderCreep } from "repositories/builderRepository";
-import { IController } from "controllers/controller";
-import { builderService } from "services/builderService";
+import { IController } from "controllers";
+import { BuilderCreep } from "models";
+import { builderService, IService } from "services";
+
 class BuilderController implements IController {
   public constructor(private builderService: IService<BuilderCreep>) {}
   run(): void {

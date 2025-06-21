@@ -35,7 +35,7 @@ Array.prototype.flatMap = function <T, U>(
 };
 
 Creep.prototype.findClosestByPriority = function (types, opts) {
-  const rangeCache = new WeakMap()
+  const rangeCache = new WeakMap();
   return (
     types
       .flatMap(type => this.room.find(type, opts))
@@ -44,10 +44,10 @@ Creep.prototype.findClosestByPriority = function (types, opts) {
         const bPriority = opts?.priority?.(b) || 0;
         const diff = aPriority - bPriority;
         if (diff !== 0) return diff;
-        if(!rangeCache.has(a)) {
+        if (!rangeCache.has(a)) {
           rangeCache.set(a, this.pos.getRangeTo(a));
         }
-        if(!rangeCache.has(b)) {
+        if (!rangeCache.has(b)) {
           rangeCache.set(b, this.pos.getRangeTo(b));
         }
         const aDist = rangeCache.get(a);
@@ -56,3 +56,9 @@ Creep.prototype.findClosestByPriority = function (types, opts) {
       })[0] || null
   );
 };
+
+export * from "./config";
+export * from "./ErrorMapper";
+export * from "./Traveler";
+export * from "./market";
+export * from "./pathStyles";

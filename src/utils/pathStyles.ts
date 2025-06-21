@@ -1,4 +1,4 @@
-import { CreepRole } from "repositories/repository";
+import { CreepRole } from "models";
 
 export const harvesterPathStyle: PolyStyle = {
   stroke: "yellow"
@@ -20,7 +20,7 @@ export const claimerPathStyle: PolyStyle = {
   stroke: "purple"
 };
 
-export const pathStyles: Record<CreepRole, PolyStyle> = {
+export const pathStyles: Partial<Record<CreepRole, PolyStyle>> = {
   [CreepRole.Harvester]: harvesterPathStyle,
   [CreepRole.Builder]: builderPathStyle,
   [CreepRole.Soldier]: soldierPathStyle,

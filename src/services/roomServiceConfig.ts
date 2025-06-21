@@ -1,4 +1,4 @@
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { CreepBodyPart, CreepRole } from "models";
 
 export const USER_NAME = "xXSefuXx";
 export const roomServiceConfig: Record<

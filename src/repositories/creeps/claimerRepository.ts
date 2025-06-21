@@ -1,21 +1,5 @@
-import { CreepRole, IRepository } from "./repository";
-
-export enum ClaimerState {
-  Collecting = "collecting",
-  Claiming = "claiming",
-  Upgrading = "upgrading",
-  Recycling = "recycling"
-}
-
-export interface ClaimerCreep extends Creep {
-  memory: ClaimerMemory;
-}
-
-export interface ClaimerMemory {
-  role: CreepRole.Claimer;
-  spawnId: string;
-  state: ClaimerState;
-}
+import { ClaimerCreep, CreepRole } from "models";
+import { IRepository } from "repositories";
 
 export interface IClaimerRepository extends IRepository<ClaimerCreep> {
   countClaimFlags(): number;

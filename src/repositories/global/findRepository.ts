@@ -1,7 +1,12 @@
+import {
+  harvesterRepository,
+  haulerRepository,
+  IHarvesterRepository,
+  IHaulerRepository,
+  ITransporterRepository,
+  transporterRepository
+} from "repositories/creeps";
 import { roomServiceConfig } from "services/roomServiceConfig";
-import { harvesterRepository, IHarvesterRepository } from "./harvesterRepository";
-import { haulerRepository, IHaulerRepository } from "./haulerRepository";
-import { ITransporterRepository, transporterRepository } from "./transporterRepository";
 
 export type THaulerContainer = StructureContainer | StructureLink;
 export interface IFindRepository {

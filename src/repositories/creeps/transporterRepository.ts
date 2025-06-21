@@ -1,21 +1,5 @@
-import { CreepRole, IRepository } from "./repository";
-
-export enum TransporterState {
-  Transferring = "transferring",
-  Collecting = "collecting",
-  Recycling = "recycling"
-}
-
-export interface TransporterCreep extends Creep {
-  memory: TransporterMemory;
-}
-
-export interface TransporterMemory {
-  role: CreepRole.Transporter;
-  spawnId: string;
-  state: TransporterState;
-  containerTargetId?: string | null;
-}
+import { CreepRole, TransporterCreep } from "models";
+import { IRepository } from "repositories";
 
 export interface ITransporterRepository extends IRepository<TransporterCreep> {
   countCreepsByTargetId(): Record<string, number>;

@@ -1,14 +1,14 @@
-import { IController } from "controllers/controller";
-import { ILinkService, linkService } from "services/linkService";
+import { IController } from "controllers";
+import { ILinkService, linkService } from "services/structures/linkService";
 
 class LinkController implements IController {
-    public constructor(private linkService: ILinkService){}
-    run(): void {
-        Memory.links = Memory.links || {};
-        for (const room of Object.values(Game.rooms)) {
-          this.linkService.executeRoom(room)
-        }
+  public constructor(private linkService: ILinkService) {}
+  run(): void {
+    Memory.links = Memory.links || {};
+    for (const room of Object.values(Game.rooms)) {
+      this.linkService.executeRoom(room);
     }
+  }
 }
 
 export const linkController = new LinkController(linkService);

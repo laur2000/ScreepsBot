@@ -1,10 +1,8 @@
-import { BuilderCreep, BuilderMemory, builderRepository, BuilderState } from "repositories/builderRepository";
-import { ABaseService, IService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
-import { IRepository } from "repositories/repository";
+import { IRepository, builderRepository, findRepository, IFindRepository } from "repositories";
 import { getUniqueId, recordCountToArray } from "utils";
-import { findRepository, IFindRepository } from "repositories/findRepository";
-import { roomServiceConfig } from "./roomServiceConfig";
+import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
+import { BuilderCreep, BuilderMemory, BuilderState, CreepBodyPart, CreepRole } from "models";
+
 class BuilderService extends ABaseService<BuilderCreep> {
   MAX_CREEPS_PER_SOURCE = 1;
   MIN_CREEPS_TTL = 60;
@@ -161,7 +159,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
     const groundResource = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
       filter: resource => resource.resourceType === RESOURCE_ENERGY
     });
-    if(groundResource) {
+    if (groundResource) {
       this.actionOrMove(creep, () => creep.pickup(groundResource), groundResource);
       return;
     }

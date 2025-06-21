@@ -1,15 +1,8 @@
-import {
-  IHaulerRepository,
-  HaulerCreep,
-  HaulerMemory,
-  haulerRepository,
-  HaulerState
-} from "repositories/haulerRepository";
-import { ABaseService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { CreepRole, HaulerCreep, HaulerMemory, HaulerState } from "models";
+import { findRepository, haulerRepository, IFindRepository, IHaulerRepository, THaulerContainer } from "repositories";
+import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
 import { getUniqueId, recordCountToArray } from "utils";
-import { findRepository, IFindRepository, THaulerContainer } from "repositories/findRepository";
-import { roomServiceConfig } from "./roomServiceConfig";
+
 export class HaulerService extends ABaseService<HaulerCreep> {
   MIN_CREEPS_TTL = 60;
   MAX_CREEPS_PER_CONTAINER = 2;
@@ -199,18 +192,6 @@ export class HaulerService extends ABaseService<HaulerCreep> {
 
     this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
   }
-  // private assignSource(creep: HaulerCreep): void {
-  //   if (creep.memory.containerTargetId) return;
-  //   const spawn: StructureSpawn | null = Game.getObjectById(creep.memory.spawnId);
-  //   if (!spawn) return;
-  //   const { hauler } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
-
-  //   const sources = this.findRepository.findHaulerContainers(hauler?.maxCreepsPerSource ?? 1);
-
-  //   if (sources[0]) {
-  //     creep.memory.containerTargetId = sources[0].id;
-  //   }
-  // }
 
   private doCollect(creep: HaulerCreep): void {
     const target: any = creep.memory.containerTargetId && Game.getObjectById(creep.memory.containerTargetId);

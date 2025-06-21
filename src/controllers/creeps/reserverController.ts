@@ -1,7 +1,7 @@
-import { IController } from "controllers/controller";
-import { IService } from "services/service";
-import { reserverService } from "services/reserverService";
-import { ReserverCreep } from "repositories/reserverRepository";
+import { IController } from "controllers";
+import { ReserverCreep } from "models";
+import { IService, reserverService } from "services";
+
 
 class ReserverController implements IController {
   public constructor(private reserverService: IService<ReserverCreep>) {}

@@ -1,7 +1,6 @@
-import { IService } from "services/service";
-import { IController } from "../controller";
-import { HarvesterCreep } from "repositories/harvesterRepository";
-import { harvesterService } from "services/harvesterService";
+import { IController } from "controllers";
+import { HarvesterCreep } from "models";
+import { harvesterService, IService } from "services";
 
 class HarvesterController implements IController {
   constructor(private harvesterService: IService<HarvesterCreep>) {}

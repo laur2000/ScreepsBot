@@ -1,22 +1,5 @@
-import { CreepRole, IRepository } from "./repository";
-
-export enum HaulerState {
-  Transferring = "transferring",
-  Collecting = "collecting",
-  Repairing = "repairing",
-  Recycling = "recycling"
-}
-
-export interface HaulerCreep extends Creep {
-  memory: HaulerMemory;
-}
-
-export interface HaulerMemory {
-  role: CreepRole.Hauler;
-  spawnId: string;
-  state: HaulerState;
-  containerTargetId?: string | null;
-}
+import { CreepRole, HaulerCreep, HaulerState } from "models";
+import { IRepository } from "repositories";
 
 export interface IHaulerRepository extends IRepository<HaulerCreep> {
   countCreepsByTargetId(): Record<string, number>;

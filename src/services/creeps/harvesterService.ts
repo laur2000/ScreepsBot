@@ -1,15 +1,7 @@
-import {
-  HarvesterCreep,
-  HarvesterMemory,
-  harvesterRepository,
-  HarvesterState,
-  IHarvesterRepository
-} from "repositories/harvesterRepository";
-import { ABaseService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { CreepRole, HarvesterCreep, HarvesterMemory, HarvesterState } from "models";
+import { harvesterRepository, IHarvesterRepository, IFindRepository, findRepository } from "repositories";
+import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
 import { getUniqueId, recordCountToArray } from "utils";
-import { IFindRepository, findRepository } from "repositories/findRepository";
-import { roomServiceConfig } from "./roomServiceConfig";
 
 class HarvesterService extends ABaseService<HarvesterCreep> {
   constructor(private harvesterRepository: IHarvesterRepository, private findRepository: IFindRepository) {

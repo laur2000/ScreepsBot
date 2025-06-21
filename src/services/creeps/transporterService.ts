@@ -1,15 +1,8 @@
-import {
-  ITransporterRepository,
-  TransporterCreep,
-  TransporterMemory,
-  transporterRepository,
-  TransporterState
-} from "repositories/transporterRepository";
-import { ABaseService, TSpawnCreepResponse } from "./service";
-import { CreepBodyPart, CreepRole } from "repositories/repository";
+import { CreepRole, TransporterCreep, TransporterMemory, TransporterState } from "models";
+import { findRepository, IFindRepository, ITransporterRepository, transporterRepository } from "repositories";
+import { ABaseService, TSpawnCreepResponse, roomServiceConfig } from "services";
 import { getUniqueId, recordCountToArray } from "utils";
-import { findRepository, IFindRepository } from "repositories/findRepository";
-import { roomServiceConfig } from "./roomServiceConfig";
+
 class TransporterService extends ABaseService<TransporterCreep> {
   MIN_CREEPS_TTL = 60;
   MAX_CREEPS_PER_CONTAINER = 2;

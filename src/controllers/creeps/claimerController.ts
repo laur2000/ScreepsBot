@@ -1,7 +1,7 @@
-import { ClaimerCreep } from "repositories/claimerRepository";
-import { IController } from "controllers/controller";
-import { IService } from "services/service";
-import { claimerService } from "services/claimerService";
+import { IController } from "controllers";
+import { ClaimerCreep } from "models";
+import { claimerService, IService } from "services";
+
 class ClaimerController implements IController {
   public constructor(private claimerService: IService<ClaimerCreep>) {}
   run(): void {

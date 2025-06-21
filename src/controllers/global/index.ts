@@ -1,4 +1,4 @@
-import { IController } from "controllers/controller";
+import { IController } from "controllers";
 import { garbageCollectorController } from "./garbageCollectorController";
 import { pixelController } from "./pixelController";
 

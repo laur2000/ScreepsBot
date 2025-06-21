@@ -1,7 +1,7 @@
-import { IService } from "services/service";
-import { IController } from "controllers/controller";
-import { SoldierCreep } from "repositories/soldierRepository";
-import { soldierService } from "services/soldierService";
+import { IController } from "controllers";
+import { SoldierCreep } from "models";
+import { IService, soldierService } from "services";
+
 
 class SoldierController implements IController {
   constructor(private soldierService: IService<SoldierCreep>) {}

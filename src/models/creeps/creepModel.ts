@@ -19,8 +19,3 @@ export enum CreepBodyPart {
   Heal = "heal",
   Claim = "claim"
 }
-
-export interface IRepository<T extends Creep> {
-  countCreepsInSpawn(spawn: string): number;
-  getCreeps(spawnId: string): T[];
-}

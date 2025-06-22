@@ -2,7 +2,6 @@ import { IController } from "controllers";
 import { SoldierCreep } from "models";
 import { IService, soldierService } from "services";
 
-
 class SoldierController implements IController {
   constructor(private soldierService: IService<SoldierCreep>) {}
   run(): void {

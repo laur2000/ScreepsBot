@@ -16,9 +16,9 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
       useBoost: false
     },
     builder: {
-      maxCreeps: 4,
+      maxCreeps: 3,
       bodyParts: { [CreepBodyPart.Work]: 6, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 5 },
-      useBoost: true
+      useBoost: false
     },
     transporter: {
       maxCreeps: 3,
@@ -50,7 +50,7 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
       useBoost: false
     },
     builder: {
-      maxCreeps: 5,
+      maxCreeps: 3,
       bodyParts: { [CreepBodyPart.Work]: 7, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 6 },
       useBoost: false
     },

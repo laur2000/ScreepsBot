@@ -23,7 +23,7 @@ class TransporterService extends ABaseService<TransporterCreep> {
     const containersCount = this.findRepository.containersCount(spawn.room);
     const containerFlags = findFlags(FlagType.Container).length;
     const maxCreeps = (containerFlags + containersCount) * this.MAX_CREEPS_PER_CONTAINER;
-    return creepCount < (transporter?.maxCreeps || 1);
+    return creepCount < (transporter?.maxCreeps ?? 1);
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
@@ -78,7 +78,7 @@ class TransporterService extends ABaseService<TransporterCreep> {
     }
   }
 
-  private doTransfer(creep: TransporterCreep): void {
+  private getTarget(creep: TransporterCreep): Structure | null {
     const target = creep.findClosestByPriority([FIND_STRUCTURES], {
       filter: structure => {
         switch (structure.structureType) {
@@ -101,14 +101,14 @@ class TransporterService extends ABaseService<TransporterCreep> {
 
           case STRUCTURE_TOWER:
             return (
-              structure.store.getFreeCapacity(RESOURCE_ENERGY) > creep.store.getUsedCapacity(RESOURCE_ENERGY) &&
-              creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 100 && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
             );
           default:
             return false;
         }
       },
       priority: structure => {
+        const hostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS);
         switch (structure.structureType) {
           case STRUCTURE_EXTENSION:
           case STRUCTURE_SPAWN:
@@ -116,7 +116,7 @@ class TransporterService extends ABaseService<TransporterCreep> {
           case STRUCTURE_TERMINAL:
             return 2;
           case STRUCTURE_TOWER:
-            return 3;
+            return hostileCreeps.length > 0 ? 0 : 5;
           case STRUCTURE_LAB:
             return 4;
           case STRUCTURE_STORAGE:
@@ -127,6 +127,10 @@ class TransporterService extends ABaseService<TransporterCreep> {
         }
       }
     });
+    return target || null;
+  }
+  private doTransfer(creep: TransporterCreep): void {
+    const target = this.getTarget(creep);
     if (!target) return;
 
     for (const resourceType in creep.store) {
@@ -146,6 +150,11 @@ class TransporterService extends ABaseService<TransporterCreep> {
   }
 
   private doCollect(creep: TransporterCreep): void {
+    const terminal = creep.room.terminal;
+    // if (terminal) {
+    //   this.actionOrMove(creep, () => creep.withdraw(terminal, RESOURCE_ENERGY), terminal);
+    //   return;
+    // }
     const tombstone = creep.pos.findClosestByRange(FIND_TOMBSTONES, {
       filter: tombstone =>
         tombstone.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || tombstone.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0
@@ -154,17 +163,22 @@ class TransporterService extends ABaseService<TransporterCreep> {
     const droppedResource = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES);
 
     const target = tombstone || (creep.memory.containerTargetId && Game.getObjectById(creep.memory.containerTargetId));
-    if (droppedResource) {
-      this.actionOrMove(creep, () => creep.pickup(droppedResource), droppedResource);
-    }
+    // if (droppedResource) {
+    //   this.actionOrMove(creep, () => creep.pickup(droppedResource), droppedResource);
+    //   return;
+    // }
     if (!target) return;
     if (target.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
       this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
     } else if (target.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
       this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_HYDROGEN), target);
-    } else if (creep.room.terminal && creep.room.terminal.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
-      this.actionOrMove(creep, () => creep.withdraw(creep.room.terminal!, RESOURCE_ENERGY), creep.room.terminal);
-    } else {
+    }
+    // else if (creep.room.terminal && creep.room.terminal.store.getUsedCapacity(RESOURCE_ENERGY) > 10000) {
+    //   this.actionOrMove(creep, () => creep.withdraw(creep.room.terminal!, RESOURCE_ENERGY), creep.room.terminal);
+    // }
+    else {
+      const target = this.getTarget(creep);
+      if (target?.structureType === STRUCTURE_STORAGE) return;
       const storage = creep.pos.findClosestByRange(FIND_STRUCTURES, {
         filter: structure =>
           structure.structureType === STRUCTURE_STORAGE && structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0

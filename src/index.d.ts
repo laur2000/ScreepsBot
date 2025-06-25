@@ -62,6 +62,10 @@ interface Array<T> {
 
 interface Creep {
   travelTo(destination: HasPos | RoomPosition, ops?: TravelToOptions): number;
+  fleeFrom(targets: HasPos[], dist?: number, maxRooms?: number): number;
+  moveOffRoad(towards?: HasPos | RoomPosition): number;
+  moveToRoom(roomName: string, range?: number): number;
+  setStatic(value?: boolean): void;
   findClosestByPriority<T extends FindConstant, S extends FindTypes[T]>(
     type: T[],
     opts?: PriorityOptions<T> & FilterOptions<T, S>

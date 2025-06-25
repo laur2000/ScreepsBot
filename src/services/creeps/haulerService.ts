@@ -155,7 +155,13 @@ export class HaulerService extends ABaseService<HaulerCreep> {
       }
     });
 
-    if (!target) return;
+    if (!target) {
+      const [buildStructure] = originRoom.find(FIND_CONSTRUCTION_SITES);
+      if (buildStructure) {
+        this.actionOrMove(creep, () => creep.build(buildStructure), buildStructure);
+      }
+      return;
+    }
 
     this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
   }

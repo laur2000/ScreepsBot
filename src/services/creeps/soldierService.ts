@@ -18,7 +18,7 @@ class SoldierService extends ABaseService<SoldierCreep> {
   override needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.soldierRepository.countCreepsInSpawn(spawn.id);
     const enemiesCount = this.soldierRepository.countEnemiesInRooms();
-    return creepCount < enemiesCount * 2 && creepCount < 6;
+    return false;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
@@ -44,7 +44,7 @@ class SoldierService extends ABaseService<SoldierCreep> {
 
       case SoldierState.Recycling:
         if (enemiesCount > 0) {
-          // creep.memory.state = SoldierState.Attacking;
+          creep.memory.state = SoldierState.Attacking;
         }
         break;
       default:
@@ -55,7 +55,6 @@ class SoldierService extends ABaseService<SoldierCreep> {
   private executeSoldierState(creep: SoldierCreep): void {
     switch (creep.memory.state) {
       case SoldierState.Attacking:
-        console.log('WTF')
         this.doAttack(creep);
         break;
 

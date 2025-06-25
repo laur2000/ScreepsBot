@@ -1,4 +1,5 @@
 import { creepsController, globalController, structuresController } from "controllers";
+import { rangerController } from "controllers/creeps/rangerController";
 import { ErrorMapper } from "utils";
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change

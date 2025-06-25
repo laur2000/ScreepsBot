@@ -1,0 +1,86 @@
+import { IController } from "controllers";
+import { CreepRole, FlagType, HealerCreep, HealerMemory, HealerState } from "models";
+import { findFlag, getUniqueId } from "utils";
+import "utils/Movement";
+class HealerController implements IController {
+  constructor() {}
+  run(): void {
+    const creeps = Object.values(Game.creeps).filter(
+      (creep: Creep) => creep.memory.role === CreepRole.Healer
+    ) as HealerCreep[];
+
+    const maxCreeps = 0;
+    if (creeps.length < maxCreeps) {
+      const name = "healer-" + getUniqueId();
+      const spawn = Object.values(Game.spawns)[0];
+      if (!spawn) return;
+
+      spawn.spawnCreep(
+        [
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          TOUGH,
+          MOVE,
+          MOVE,
+          MOVE,
+          MOVE,
+          MOVE,
+          MOVE,
+          HEAL,
+          HEAL
+        ],
+        name,
+        {
+          memory: { role: CreepRole.Healer, spawnId: spawn.id, state: HealerState.Idle } as HealerMemory
+        }
+      );
+    } else {
+      creeps.forEach(x => (x.memory.state = HealerState.Healing));
+    }
+
+    creeps.filter(x => x.memory.state === HealerState.Healing).forEach(x => this.heal(x));
+  }
+
+  heal(creep: HealerCreep): void {
+    // Get close to the enemy to be in range for attack, then attack and flee away
+    if (creep.hits < creep.hitsMax) {
+      creep.heal(creep);
+    }
+    const healerFlag = findFlag(FlagType.Range);
+    if (!healerFlag) return;
+    const room = healerFlag.room?.name;
+
+    if (creep.room.name !== room) {
+      creep.moveTo(healerFlag);
+      return;
+    }
+    const closestAlly = creep.pos.findClosestByRange(FIND_MY_CREEPS, {
+      filter: creep => creep.hits < creep.hitsMax
+    });
+    if (!closestAlly || creep.room.controller?.safeMode) {
+      creep.moveTo(healerFlag);
+      return;
+    }
+
+    this.actionOrMove(creep, () => creep.heal(closestAlly), closestAlly);
+  }
+
+  actionOrMove(creep: HealerCreep, action: () => ScreepsReturnCode, target: RoomPosition | HasPos): ScreepsReturnCode {
+    const result = action();
+
+    if (result === ERR_NOT_IN_RANGE) {
+      creep.travelTo(target);
+      return OK;
+    }
+    return result;
+  }
+}
+
+export const healerController = new HealerController();

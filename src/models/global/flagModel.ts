@@ -5,5 +5,7 @@ export enum FlagType {
   HaulerContainer = "hauler_container",
   Container = "container",
   Reserve = "reserve",
-  Defend = "defend"
+  Defend = "defend",
+  Range = "range",
+  Decoy = "decoy"
 }

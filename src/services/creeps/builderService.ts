@@ -24,7 +24,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
     const harvesterName = `builder-${spawn.name}-${getUniqueId()}`;
-    const { builder } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+    const builder = roomServiceConfig[spawn.room.name]?.builder || roomServiceConfig.default?.builder;
 
     const res = spawn.spawnCreep(recordCountToArray(builder!.bodyParts), harvesterName, {
       memory: {
@@ -113,6 +113,27 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   private doBuild(creep: BuilderCreep): void {
+    // const road = creep.pos.lookFor(LOOK_STRUCTURES).find(s => s.structureType === STRUCTURE_ROAD);
+    // if (road && road.hits < road.hitsMax) {
+    //   this.actionOrMove(creep, () => creep.repair(road), road);
+    //   return;
+    // }
+
+    // const container = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+    //   filter: structure => {
+    //     switch (structure.structureType) {
+    //       case STRUCTURE_CONTAINER:
+    //         return structure.hits < structure.hitsMax;
+    //       default:
+    //         return false;
+    //     }
+    //   }
+    // });
+
+    // if (container) {
+    //   this.actionOrMove(creep, () => creep.repair(container), container);
+    //   return;
+    // }
     const buildFlag = findFlag(FlagType.Build);
     const targetPos = buildFlag?.pos || creep.pos;
     if (buildFlag && targetPos.roomName !== creep.room.name) {
@@ -126,6 +147,12 @@ class BuilderService extends ABaseService<BuilderCreep> {
       this.move(creep, originalRoom);
       return;
     }
+
+    // const terminal = creep.room.terminal;
+    // if (terminal) {
+    //   this.actionOrMove(creep, () => creep.transfer(terminal, RESOURCE_ENERGY), terminal);
+    //   return;
+    // }
 
     const target = targetPos.findClosestByRange(FIND_CONSTRUCTION_SITES, {
       filter: site => {
@@ -151,13 +178,43 @@ class BuilderService extends ABaseService<BuilderCreep> {
     this.actionOrMove(creep, () => creep.build(target), target);
   }
 
+  private doRepair(creep: BuilderCreep): void {
+    const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+      filter: structure => {
+        switch (structure.structureType) {
+          case STRUCTURE_RAMPART:
+          case STRUCTURE_WALL:
+            return structure.hits < 100000;
+          default:
+            return false;
+        }
+      }
+    });
+    if (!target) return;
+    this.actionOrMove(creep, () => creep.repair(target), target);
+  }
   private doCollect(creep: BuilderCreep): void {
+   const buildFlag = findFlag(FlagType.Build);
+    const targetPos = buildFlag?.pos || creep.pos;
+    if (buildFlag && targetPos.roomName !== creep.room.name) {
+      this.move(creep, targetPos);
+      return;
+    }
+
+    const originalRoom = (Game.getObjectById(creep.memory.spawnId) as StructureSpawn).pos;
+
+    if (!buildFlag && targetPos.roomName !== originalRoom.roomName) {
+      this.move(creep, originalRoom);
+      return;
+    }
+
+
     const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
       filter: structure => {
         switch (structure.structureType) {
           case STRUCTURE_STORAGE:
           case STRUCTURE_CONTAINER:
-            return structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
+            return structure.store.getUsedCapacity(RESOURCE_ENERGY) > creep.store.getFreeCapacity(RESOURCE_ENERGY);
           default:
             return false;
         }
@@ -171,14 +228,27 @@ class BuilderService extends ABaseService<BuilderCreep> {
       this.actionOrMove(creep, () => creep.pickup(groundResource), groundResource);
       return;
     }
+
+    const ruin = creep.pos.findClosestByRange(FIND_RUINS, {
+      filter: ruin => ruin.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+    });
+
+    if (ruin) {
+      this.actionOrMove(creep, () => creep.withdraw(ruin, RESOURCE_ENERGY), ruin);
+      return;
+    }
+
     if (!target) {
       const buildFlag = findFlag(FlagType.Build);
       if (!buildFlag) return;
       const source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
+
       if (!source) return;
-      this.actionOrMove(creep, () => creep.harvest(source), source);
+
+      const err = this.actionOrMove(creep, () => creep.harvest(source), source);
       return;
     }
+
     this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
   }
 }

@@ -6,22 +6,35 @@ class TurretController implements IController {
     for (const tower of Object.values(Game.structures).filter(
       s => s.structureType === STRUCTURE_TOWER
     ) as StructureTower[]) {
-      const enemies = tower.room.find(FIND_HOSTILE_CREEPS);
-      for (const enemy of enemies) {
+      const hasHealer = tower.room.find(FIND_HOSTILE_CREEPS, {
+        filter: creep => creep.getActiveBodyparts(HEAL) > 0
+      });
+      const enemy = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
+        filter: creep => {
+          const isRevenge = creep.owner?.username === "Revenge";
+          if (hasHealer) {
+            return !isRevenge && creep.getActiveBodyparts(HEAL) > 0;
+          }
+          return !isRevenge;
+        }
+      });
+      if (enemy) {
         tower.attack(enemy);
         continue;
       }
+
       const structures = tower.room.find(FIND_STRUCTURES, {
         filter: structure => {
-          const needsRepair = structure.hits < structure.hitsMax && structure.hits < 100000;
+          const needsRepair = structure.hits < structure.hitsMax && structure.hits < 200000;
           const isWall = structure.structureType === STRUCTURE_WALL;
-          return needsRepair && !isWall;
+          const isRampart = structure.structureType === STRUCTURE_RAMPART;
+          return isRampart && needsRepair && !isWall;
         }
       });
 
-      for (const structure of structures) {
-        tower.repair(structure);
-      }
+      structures.sort((a, b) => a.hits - b.hits);
+
+      if (structures[0]) tower.repair(structures[0]);
     }
   }
 }

@@ -84,7 +84,7 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
     if (!harvester.memory.harvestTargetId) return;
     const target = Game.getObjectById(harvester.memory.harvestTargetId) as Source | Deposit | Mineral;
     if (!target) return;
-    this.actionOrMove(harvester, () => harvester.harvest(target), target);
+    const err = this.actionOrMove(harvester, () => harvester.harvest(target), target);
   }
 
   private doTransfer(creep: HarvesterCreep): void {
@@ -93,16 +93,16 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
         switch (structure.structureType) {
           case STRUCTURE_CONTAINER:
           case STRUCTURE_STORAGE:
-            return (
-              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 ||
-              structure.store.getFreeCapacity(RESOURCE_HYDROGEN) > 0
-            );
+          case STRUCTURE_SPAWN:
+          case STRUCTURE_EXTENSION:
+            return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
           case STRUCTURE_LINK:
             return (
               structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
             );
-          case STRUCTURE_CONTROLLER:
-            return structure.my;
+
+          // case STRUCTURE_CONTROLLER:
+          //   return structure.my;
           default:
             return false;
         }

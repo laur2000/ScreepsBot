@@ -1,7 +1,7 @@
-import { CreepRole, HaulerCreep, HaulerMemory, HaulerState } from "models";
+import { CreepRole, FlagType, HaulerCreep, HaulerMemory, HaulerState } from "models";
 import { findRepository, haulerRepository, IFindRepository, IHaulerRepository, THaulerContainer } from "repositories";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
-import { getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
+import { calculateBodyCost, findFlag, getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
 
 export class HaulerService extends ABaseService<HaulerCreep> {
   MIN_CREEPS_TTL = 60;
@@ -20,21 +20,26 @@ export class HaulerService extends ABaseService<HaulerCreep> {
     return this.findRepository.findAvailableHaulerContainers().length > 0;
   }
 
+  getBodyNeededForContainer(source: THaulerContainer): { body: BodyPartConstant[]; energy: number } {
+    const room = source.room || ({ name: "" } as Room);
+    const { bodyParts } = getCreepConfigPerRoom(CreepRole.Hauler, room);
+    const body = recordCountToArray(bodyParts);
+    const energy = calculateBodyCost(body);
+    return { body, energy };
+  }
+
   override spawn(): TSpawnCreepResponse {
     const name = `hauler-${getUniqueId()}`;
     const haulerContainers = this.findRepository.findAvailableHaulerContainers();
     for (const haulerContainer of haulerContainers) {
-      const result = this.findRepository.findClosestSpawnOfTarget(haulerContainer);
-      if (!result) return ERR_BUSY;
+      const { body, energy } = this.getBodyNeededForContainer(haulerContainer);
+      const closestAvailableSpawn = this.findRepository.findClosestAvailableSpawnOfTarget(haulerContainer, energy);
+      if (!closestAvailableSpawn) return ERR_BUSY;
 
-      const { closestSpawn, closestAvailableSpawn } = result;
-
-      const haulerConfig = getCreepConfigPerRoom(CreepRole.Hauler, closestAvailableSpawn.room);
-
-      closestAvailableSpawn.spawnCreep(recordCountToArray(haulerConfig.bodyParts), name, {
+      closestAvailableSpawn.spawnCreep(body, name, {
         memory: {
           role: CreepRole.Hauler,
-          spawnId: closestSpawn.id,
+          spawnId: closestAvailableSpawn.id,
           state: HaulerState.Collecting,
           containerTargetId: haulerContainer.id
         } as HaulerMemory
@@ -53,7 +58,7 @@ export class HaulerService extends ABaseService<HaulerCreep> {
         break;
       case HaulerState.Collecting:
         if (creep.store.getFreeCapacity() === 0) {
-          creep.memory.state = HaulerState.Repairing;
+          creep.memory.state = HaulerState.Transferring;
         }
         break;
       case HaulerState.Repairing:
@@ -112,7 +117,7 @@ export class HaulerService extends ABaseService<HaulerCreep> {
           case STRUCTURE_CONTAINER:
             return structure.hits < structure.hitsMax;
           default:
-            return "my" in structure && structure.my && structure.hits < structure.hitsMax;
+            return false;
         }
       }
     });
@@ -130,17 +135,18 @@ export class HaulerService extends ABaseService<HaulerCreep> {
     const [target] = originRoom.find(FIND_STRUCTURES, {
       filter: structure => {
         switch (structure.structureType) {
-          case STRUCTURE_EXTENSION:
-          case STRUCTURE_SPAWN:
-          case STRUCTURE_LAB:
-            return (
-              creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-            );
-          case STRUCTURE_TERMINAL:
-            const terminalId = creep.room.terminal?.id;
-            const transaction = global.getTransaction(terminalId);
-            if (!transaction) return false;
-            return structure.store.getUsedCapacity(RESOURCE_ENERGY) < transaction.energyNeeded;
+          // case STRUCTURE_CONTAINER:
+          // case STRUCTURE_EXTENSION:
+          // case STRUCTURE_SPAWN:
+          // case STRUCTURE_LAB:
+          //   return (
+          //     creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          //   );
+          // case STRUCTURE_TERMINAL:
+          //   const terminalId = creep.room.terminal?.id;
+          //   const transaction = global.getTransaction(terminalId);
+          //   if (!transaction) return false;
+          //   return structure.store.getUsedCapacity(RESOURCE_ENERGY) < transaction.energyNeeded;
           case STRUCTURE_STORAGE:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
 
@@ -159,6 +165,8 @@ export class HaulerService extends ABaseService<HaulerCreep> {
       const [buildStructure] = originRoom.find(FIND_CONSTRUCTION_SITES);
       if (buildStructure) {
         this.actionOrMove(creep, () => creep.build(buildStructure), buildStructure);
+      } else if (originRoom.controller) {
+        this.actionOrMove(creep, () => creep.upgradeController(originRoom.controller!), originRoom.controller);
       }
       return;
     }
@@ -168,7 +176,13 @@ export class HaulerService extends ABaseService<HaulerCreep> {
 
   private doCollect(creep: HaulerCreep): void {
     const target: any = creep.memory.containerTargetId && Game.getObjectById(creep.memory.containerTargetId);
-    if (!target) return;
+    if (!target) {
+      const haulerFlag = findFlag(FlagType.HaulerContainer);
+      if (haulerFlag) {
+        creep.travelTo(haulerFlag);
+      }
+      return;
+    }
     this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
   }
 }

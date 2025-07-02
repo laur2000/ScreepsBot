@@ -1,4 +1,4 @@
-import { CreepRole, FlagType, ReserverCreep } from "models";
+import { CreepRole, FlagType, ReserverCreep, ReserverState } from "models";
 import { IRepository } from "repositories";
 import { findFlags } from "utils";
 
@@ -14,9 +14,9 @@ export class ReserverRepository implements IReserverRepository {
     ).length;
   }
 
-  getCreeps(spawnId: string): ReserverCreep[] {
+  getCreeps(): ReserverCreep[] {
     return Object.values(Game.creeps).filter(
-      (creep: Creep) => creep.memory.role === CreepRole.Reserver && creep.memory.spawnId === spawnId
+      (creep: Creep) => creep.memory.role === CreepRole.Reserver && creep.memory.state !== ReserverState.Recycling
     ) as ReserverCreep[];
   }
 

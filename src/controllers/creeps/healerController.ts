@@ -20,21 +20,19 @@ class HealerController implements IController {
           TOUGH,
           TOUGH,
           TOUGH,
-          TOUGH,
-          TOUGH,
-          TOUGH,
-          TOUGH,
-          TOUGH,
-          TOUGH,
-          TOUGH,
+          TOUGH,  // 120 catalyzed ghodium alkalide
           MOVE,
           MOVE,
-          MOVE,
-          MOVE,
-          MOVE,
+          MOVE, // 120 catalyzed zynthium alkalide
           MOVE,
           HEAL,
-          HEAL
+          HEAL,
+          HEAL,
+          HEAL,
+          HEAL,
+          HEAL,
+          HEAL,
+          HEAL // 240 catalyzed lemergium alkalide
         ],
         name,
         {
@@ -43,6 +41,11 @@ class HealerController implements IController {
       );
     } else {
       creeps.forEach(x => (x.memory.state = HealerState.Healing));
+      const lab = Game.getObjectById("685e21e3aed1553d572f40be") as StructureLab | undefined;
+      if (lab) {
+        lab.boostCreep(creeps[0]);
+        lab.boostCreep(creeps[1]);
+      }
     }
 
     creeps.filter(x => x.memory.state === HealerState.Healing).forEach(x => this.heal(x));
@@ -50,10 +53,11 @@ class HealerController implements IController {
 
   heal(creep: HealerCreep): void {
     // Get close to the enemy to be in range for attack, then attack and flee away
-    if (creep.hits < creep.hitsMax) {
-      creep.heal(creep);
-    }
-    const healerFlag = findFlag(FlagType.Range);
+    // if (creep.hits < creep.hitsMax) {
+    //   creep.heal(creep);
+    // }
+    creep.heal(creep);
+    const healerFlag = findFlag(FlagType.Heal);
     if (!healerFlag) return;
     const room = healerFlag.room?.name;
 
@@ -64,7 +68,7 @@ class HealerController implements IController {
     const closestAlly = creep.pos.findClosestByRange(FIND_MY_CREEPS, {
       filter: creep => creep.hits < creep.hitsMax
     });
-    if (!closestAlly || creep.room.controller?.safeMode) {
+    if (!closestAlly) {
       creep.moveTo(healerFlag);
       return;
     }

@@ -13,4 +13,5 @@ export interface ReserverMemory {
   role: CreepRole.Reserver;
   spawnId: string;
   state: ReserverState;
+  targetId?: string;
 }

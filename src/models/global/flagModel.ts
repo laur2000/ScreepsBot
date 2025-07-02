@@ -7,5 +7,9 @@ export enum FlagType {
   Reserve = "reserve",
   Defend = "defend",
   Range = "range",
-  Decoy = "decoy"
+  Decoy = "decoy",
+  Heal = "heal",
+  Stay = "stay",
+  Lab = "lab",
+  Reaction = "reaction"
 }

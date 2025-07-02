@@ -60,6 +60,10 @@ Creep.prototype.findClosestByPriority = function (types, opts) {
   );
 };
 
+export function calculateBodyCost(body: BodyPartConstant[]) {
+  return body.reduce((acc, part) => acc + BODYPART_COST[part], 0);
+}
+
 export function getVisibleFlaggedRooms(flagType?: FlagType) {
   const flags = flagType ? findFlags(flagType) : Object.values(Game.flags);
   const rooms = flags.map(flag => flag.room).filter(room => !!room) as Room[];
@@ -82,6 +86,26 @@ export function findFlags(flagType: FlagType): Flag[] {
 export function getCreepConfigPerRoom(role: CreepRole, room: Room) {
   const config = roomServiceConfig[room.name]?.[role] || roomServiceConfig.default[role];
   return config as RoomServiceConfig;
+}
+
+export function doRecycle(creep: Creep): void {
+  const spawn = Game.getObjectById(creep.memory.spawnId) as StructureSpawn;
+  if (!spawn) return;
+
+  const err = spawn.recycleCreep(creep);
+
+  switch (err) {
+    case ERR_NOT_IN_RANGE:
+      creep.travelTo(spawn);
+
+      break;
+  }
+}
+
+export function isMyUsername(name: string) {
+  const spawn = Object.values(Game.spawns)[0];
+  if (!spawn) return false;
+  return spawn.owner.username === name;
 }
 export * from "./config";
 export * from "./ErrorMapper";

@@ -13,10 +13,6 @@ import { getMaxCreepsPerTarget, getVisibleFlaggedRooms } from "utils";
 export type THaulerContainer = StructureContainer | StructureLink;
 export type THarvesterSource = Source | Mineral;
 export type TTarget = _HasId & HasPos;
-export type TClosestSpawns = {
-  closestSpawn: StructureSpawn;
-  closestAvailableSpawn: StructureSpawn;
-};
 
 export interface IFindRepository {
   findAvailableContainers(room: Room, max: number): StructureContainer[];
@@ -25,7 +21,7 @@ export interface IFindRepository {
   findAvailableHarvesterSources(): THarvesterSource[];
   // findAllHarvesterSources(): THarvesterSource[];
   findClosestSpawn(spawns: StructureSpawn[], target: TTarget): StructureSpawn | null;
-  findClosestSpawnOfTarget(target: TTarget): TClosestSpawns | null;
+  findClosestAvailableSpawnOfTarget(target: TTarget, energyNeeded?: number): StructureSpawn | null;
   sourcesCount(room: Room): number;
   containersCount(room: Room): number;
 }
@@ -69,6 +65,7 @@ export class FindRepository implements IFindRepository {
       room.find(FIND_STRUCTURES, {
         filter: structure => {
           switch (structure.structureType) {
+            case STRUCTURE_STORAGE:
             case STRUCTURE_CONTAINER:
               break;
             case STRUCTURE_LINK:
@@ -90,24 +87,6 @@ export class FindRepository implements IFindRepository {
       })
     ) as THaulerContainer[];
   }
-
-  // findAllHaulerContainers(): THaulerContainer[] {
-  //   return getVisibleFlaggedRooms("hauler_container").flatMap(room =>
-  //     room.find(FIND_STRUCTURES, {
-  //       filter: structure => {
-  //         switch (structure.structureType) {
-  //           case STRUCTURE_CONTAINER:
-  //             return true;
-  //           case STRUCTURE_LINK:
-  //             const linkMemory = Memory.links?.[structure.id] || {};
-  //             return linkMemory.isContainer;
-  //           default:
-  //             return false;
-  //         }
-  //       }
-  //     })
-  //   ) as THaulerContainer[];
-  // }
 
   findAvailableHarvesterSources() {
     const sourcesCount = this.harvesterRepository.countCreepsBySource();
@@ -145,22 +124,6 @@ export class FindRepository implements IFindRepository {
     return [...sources, ...minerals];
   }
 
-  // findAllHarvesterSources(): (Source | Mineral)[] {
-  //   const rooms = getVisibleFlaggedRooms("harvest");
-  //   const sources = rooms.flatMap(room => room.find(FIND_SOURCES));
-  //   const minerals = rooms.flatMap(room =>
-  //     room.find(FIND_MINERALS, {
-  //       filter: mineral => {
-  //         const extractor = mineral.pos
-  //           .lookFor(LOOK_STRUCTURES)
-  //           .find(structure => structure.structureType === STRUCTURE_EXTRACTOR);
-  //         return !!extractor;
-  //       }
-  //     })
-  //   );
-  //   return [...sources, ...minerals];
-  // }
-
   private targetCostCache: Record<string, Record<string, number>> = {};
   findClosestSpawn(spawns: StructureSpawn[], target: TTarget) {
     let maxCost = Number.MAX_SAFE_INTEGER;
@@ -183,15 +146,10 @@ export class FindRepository implements IFindRepository {
     return closestSpawn;
   }
 
-  findClosestSpawnOfTarget(target: TTarget) {
+  findClosestAvailableSpawnOfTarget(target: TTarget, energyNeeded: number = 0) {
     const allSpawns = Object.values(Game.spawns);
-    // TODO  Also check if energyAvailable in room is enough to spawn target
-    const availableSpawns = allSpawns.filter(spawn => !spawn.spawning);
-    const closestAvailableSpawn = this.findClosestSpawn(availableSpawns, target);
-    if (!closestAvailableSpawn) return null;
-
-    const closestSpawn = this.findClosestSpawn(allSpawns, target)!;
-    return { closestSpawn, closestAvailableSpawn };
+    const availableSpawns = allSpawns.filter(spawn => !spawn.spawning && spawn.room.energyAvailable >= energyNeeded);
+    return this.findClosestSpawn(availableSpawns, target);
   }
 
   sourcesCount(room: Room): number {

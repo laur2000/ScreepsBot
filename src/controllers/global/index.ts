@@ -16,15 +16,19 @@ class GlobalController implements IController {
       const controller = room.controller;
       if (!controller || !controller.my || controller.safeMode) continue;
 
-      const attackers = room.find(FIND_HOSTILE_CREEPS, {
-        filter: creep => {
-          const hasAttackBodyPart = creep.getActiveBodyparts(ATTACK) > 0;
-          const hasRangedAttackBodyPart = creep.getActiveBodyparts(RANGED_ATTACK) > 0;
-          return hasAttackBodyPart || hasRangedAttackBodyPart;
+      const [damagedStructure] = controller.room.find(FIND_STRUCTURES, {
+        filter: structure => {
+          switch (structure.structureType) {
+            case STRUCTURE_TOWER:
+            case STRUCTURE_SPAWN:
+              return structure.hits < structure.hitsMax;
+            default:
+              return false;
+          }
         }
       });
 
-      if (attackers.length > 0) {
+      if (damagedStructure) {
         controller.activateSafeMode();
       }
     }

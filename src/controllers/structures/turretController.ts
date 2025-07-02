@@ -6,7 +6,7 @@ class TurretController implements IController {
     for (const tower of Object.values(Game.structures).filter(
       s => s.structureType === STRUCTURE_TOWER
     ) as StructureTower[]) {
-      const hasHealer = tower.room.find(FIND_HOSTILE_CREEPS, {
+      const [hasHealer] = tower.room.find(FIND_HOSTILE_CREEPS, {
         filter: creep => creep.getActiveBodyparts(HEAL) > 0
       });
       const enemy = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
@@ -18,23 +18,25 @@ class TurretController implements IController {
           return !isRevenge;
         }
       });
-      if (enemy) {
-        tower.attack(enemy);
-        continue;
-      }
-
       const structures = tower.room.find(FIND_STRUCTURES, {
         filter: structure => {
-          const needsRepair = structure.hits < structure.hitsMax && structure.hits < 200000;
+          const needsRepair = structure.hits < structure.hitsMax && structure.hits < 310000;
           const isWall = structure.structureType === STRUCTURE_WALL;
           const isRampart = structure.structureType === STRUCTURE_RAMPART;
-          return isRampart && needsRepair && !isWall;
+          return needsRepair && !isWall;
         }
       });
 
       structures.sort((a, b) => a.hits - b.hits);
 
-      if (structures[0]) tower.repair(structures[0]);
+      if (structures[0]) {
+        tower.repair(structures[0]);
+        continue;
+      }
+      if (enemy) {
+        tower.attack(enemy);
+        continue;
+      }
     }
   }
 }

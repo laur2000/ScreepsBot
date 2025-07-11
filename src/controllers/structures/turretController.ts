@@ -1,4 +1,5 @@
 import { IController } from "controllers";
+import profiler from "utils/profiler";
 
 class TurretController implements IController {
   run(): void {
@@ -40,5 +41,6 @@ class TurretController implements IController {
     }
   }
 }
+profiler.registerClass(TurretController, "TurretController");
 
 export const turretController = new TurretController();

@@ -1,6 +1,7 @@
 import { IController } from "controllers";
 import { HarvesterCreep } from "models";
 import { HarvesterService, harvesterService, IService } from "services";
+import profiler from "utils/profiler";
 
 class HarvesterController implements IController {
   constructor(private harvesterService: HarvesterService) {}
@@ -16,5 +17,6 @@ class HarvesterController implements IController {
     }
   }
 }
+profiler.registerClass(HarvesterController, "HarvesterController");
 
 export const harvesterController = new HarvesterController(harvesterService);

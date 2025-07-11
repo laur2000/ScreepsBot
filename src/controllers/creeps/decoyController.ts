@@ -2,6 +2,8 @@ import { IController } from "controllers";
 import { CreepRole, FlagType, DecoyCreep, DecoyMemory, DecoyState } from "models";
 import { findFlag, getUniqueId } from "utils";
 import "utils/Movement";
+import profiler from "utils/profiler";
+
 class DecoyController implements IController {
   constructor() {}
   run(): void {
@@ -95,5 +97,6 @@ class DecoyController implements IController {
     return result;
   }
 }
+profiler.registerClass(DecoyController, "DecoyController");
 
 export const decoyController = new DecoyController();

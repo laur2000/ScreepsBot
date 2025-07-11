@@ -1,6 +1,7 @@
 import { IController } from "controllers";
 import { SoldierCreep } from "models";
 import { IService, soldierService } from "services";
+import profiler from "utils/profiler";
 
 class SoldierController implements IController {
   constructor(private soldierService: IService<SoldierCreep>) {}
@@ -17,5 +18,6 @@ class SoldierController implements IController {
     }
   }
 }
+profiler.registerClass(SoldierController, "SoldierController");
 
 export const soldierController = new SoldierController(soldierService);

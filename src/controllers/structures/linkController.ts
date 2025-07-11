@@ -1,5 +1,6 @@
 import { IController } from "controllers";
 import { ILinkService, linkService } from "services/structures/linkService";
+import profiler from "utils/profiler";
 
 class LinkController implements IController {
   public constructor(private linkService: ILinkService) {}
@@ -10,5 +11,6 @@ class LinkController implements IController {
     }
   }
 }
+profiler.registerClass(LinkController, "LinkController");
 
 export const linkController = new LinkController(linkService);

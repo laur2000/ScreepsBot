@@ -1,4 +1,5 @@
 import { ILinkRepository, linkRepository } from "repositories";
+import profiler from "utils/profiler";
 
 export interface ILinkService {
   getRoomLinks(room: Room): StructureLink[];
@@ -33,5 +34,6 @@ class LinkService implements ILinkService {
     }
   }
 }
+profiler.registerClass(LinkService, "LinkService");
 
 export const linkService = new LinkService(linkRepository);

@@ -1,6 +1,40 @@
 import { CreepRole, FlagType } from "models";
 import { RoomServiceConfig, roomServiceConfig } from "services";
 
+declare global {
+  namespace NodeJS {
+    interface Global {
+      removeLabFlags(roomName: string): void;
+    }
+  }
+}
+
+global.removeLabFlags = function (roomName: string) {
+  for (const flag of findFlags(FlagType.Lab)) {
+    if (flag.room?.name === roomName) {
+      flag.remove();
+    }
+  }
+
+  for (const flag of findFlags(FlagType.Output)) {
+    if (flag.room?.name === roomName) {
+      flag.remove();
+    }
+  }
+
+  for (const flag of findFlags(FlagType.Reaction)) {
+    if (flag.room?.name === roomName) {
+      flag.remove();
+    }
+  }
+
+  for (const flag of findFlags(FlagType.Reverse)) {
+    if (flag.room?.name === roomName) {
+      flag.remove();
+    }
+  }
+};
+
 export function recordCountToArray<T extends string | number | symbol>(record: Partial<Record<T, number>>): T[] {
   const res: T[] = [];
   for (const [key, count] of Object.entries(record)) {
@@ -86,6 +120,27 @@ export function findFlags(flagType: FlagType): Flag[] {
 export function getCreepConfigPerRoom(role: CreepRole, room: Room) {
   const config = roomServiceConfig[room.name]?.[role] || roomServiceConfig.default[role];
   return config as RoomServiceConfig;
+}
+
+export function getLabs(roomName?: string) {
+  return getLabsBy({ roomName, flagType: FlagType.Lab });
+}
+
+export function getLabsBy({ roomName, flagType }: { roomName?: string; flagType: FlagType }) {
+  return findFlags(flagType)
+    .filter(flag => (roomName ? flag.room?.name === roomName : true))
+    .map(flag => {
+      const lab = flag.pos
+        .lookFor(LOOK_STRUCTURES)
+        .find(structure => structure.structureType === STRUCTURE_LAB) as StructureLab;
+      const mineral = flag.name.split(",")[1];
+      if (!lab) return null;
+      return {
+        lab,
+        mineral
+      };
+    })
+    .filter(x => !!x) as { lab: StructureLab; mineral: MineralConstant | MineralCompoundConstant }[];
 }
 
 export function doRecycle(creep: Creep): void {

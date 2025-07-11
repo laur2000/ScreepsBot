@@ -1,7 +1,8 @@
 import { IRepository, builderRepository, findRepository, IFindRepository } from "repositories";
-import { findFlag, getUniqueId, recordCountToArray } from "utils";
+import { findFlag, findFlags, getLabs, getUniqueId, recordCountToArray } from "utils";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
 import { BuilderCreep, BuilderMemory, BuilderState, CreepBodyPart, CreepRole, FlagType } from "models";
+import profiler from "utils/profiler";
 
 class BuilderService extends ABaseService<BuilderCreep> {
   MAX_CREEPS_PER_SOURCE = 1;
@@ -23,10 +24,10 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
-    const harvesterName = `builder-${spawn.name}-${getUniqueId()}`;
+    const builderName = `builder-${spawn.name}-${getUniqueId()}`;
     const builder = roomServiceConfig[spawn.room.name]?.builder || roomServiceConfig.default?.builder;
 
-    const res = spawn.spawnCreep(recordCountToArray(builder!.bodyParts), harvesterName, {
+    const res = spawn.spawnCreep(recordCountToArray(builder!.bodyParts), builderName, {
       memory: {
         role: CreepRole.Builder,
         spawnId: spawn.id,
@@ -66,6 +67,25 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   private executeBuilderState(creep: BuilderCreep): void {
+    const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
+      filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
+    });
+    if (skCreep) {
+      creep.fleeFrom([skCreep], 6);
+      return;
+    }
+    const skLair = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, {
+      filter: sk =>
+        sk.structureType === STRUCTURE_KEEPER_LAIR &&
+        creep.pos.getRangeTo(sk) < 6 &&
+        sk.ticksToSpawn &&
+        sk.ticksToSpawn < 10
+    });
+
+    if (skLair) {
+      creep.fleeFrom([skLair], 6);
+      return;
+    }
     switch (creep.memory.state) {
       case BuilderState.Boosting:
         this.doBoost(creep);
@@ -97,14 +117,13 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   private doBoost(creep: BuilderCreep): void {
-    const [boostFlag] = creep.room.find(FIND_FLAGS, {
-      filter: flag => flag.name.startsWith("builder,boost")
-    });
-    if (!boostFlag) return;
-    const lab = boostFlag.pos.lookFor(LOOK_STRUCTURES)[0] as StructureLab | undefined;
-    if (!lab) return;
+    if (creep.spawning) return;
+    const boostLab = getLabs(creep.room.name).find(
+      x => x.mineral === "XGH2O" && x.lab.store.getUsedCapacity(x.mineral) > creep.getActiveBodyparts(WORK) * 30
+    );
+    if (!boostLab) return;
 
-    const err = this.actionOrMove(creep, () => lab.boostCreep(creep), lab);
+    const err = this.actionOrMove(creep, () => boostLab.lab.boostCreep(creep), boostLab.lab);
 
     if (err !== ERR_NOT_IN_RANGE) {
       // TODO Creep tries to boost immediately after starting to spawn and fails
@@ -134,6 +153,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
     //   this.actionOrMove(creep, () => creep.repair(repairTaget), repairTaget);
     //   return;
     // }
+
     const buildFlag = findFlag(FlagType.Build);
     const targetPos = buildFlag?.pos || creep.pos;
     if (buildFlag && targetPos.roomName !== creep.room.name) {
@@ -190,7 +210,10 @@ class BuilderService extends ABaseService<BuilderCreep> {
   private doCollect(creep: BuilderCreep): void {
     const originalRoom = (Game.getObjectById(creep.memory.spawnId) as StructureSpawn).pos;
 
-    if (creep.room.name !== originalRoom.roomName) {
+    if (
+      !creep.room.find(FIND_FLAGS, { filter: flag => flag.name.startsWith(FlagType.Build) })[0] &&
+      creep.room.name !== originalRoom.roomName
+    ) {
       this.move(creep, originalRoom);
       return;
     }
@@ -228,16 +251,21 @@ class BuilderService extends ABaseService<BuilderCreep> {
     if (!target) {
       const buildFlag = findFlag(FlagType.Build);
       if (!buildFlag) return;
-      const source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
+      const source = buildFlag.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
 
       if (!source) return;
 
       const err = this.actionOrMove(creep, () => creep.harvest(source), source);
+      if (creep.store.getFreeCapacity(RESOURCE_ENERGY) < 21) {
+        creep.fleeFrom([source], 2);
+      }
       return;
     }
 
     this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
   }
 }
+
+profiler.registerClass(BuilderService, "BuilderService");
 
 export const builderService = new BuilderService(builderRepository, findRepository);

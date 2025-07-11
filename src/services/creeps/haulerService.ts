@@ -2,6 +2,7 @@ import { CreepRole, FlagType, HaulerCreep, HaulerMemory, HaulerState } from "mod
 import { findRepository, haulerRepository, IFindRepository, IHaulerRepository, THaulerContainer } from "repositories";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
 import { calculateBodyCost, findFlag, getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
+import profiler from "utils/profiler";
 
 export class HaulerService extends ABaseService<HaulerCreep> {
   MIN_CREEPS_TTL = 60;
@@ -29,9 +30,10 @@ export class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   override spawn(): TSpawnCreepResponse {
-    const name = `hauler-${getUniqueId()}`;
     const haulerContainers = this.findRepository.findAvailableHaulerContainers();
     for (const haulerContainer of haulerContainers) {
+      const name = `hauler-${haulerContainer.room?.name}-${getUniqueId()}`;
+
       const { body, energy } = this.getBodyNeededForContainer(haulerContainer);
       const closestAvailableSpawn = this.findRepository.findClosestAvailableSpawnOfTarget(haulerContainer, energy);
       if (!closestAvailableSpawn) return ERR_BUSY;
@@ -63,15 +65,16 @@ export class HaulerService extends ABaseService<HaulerCreep> {
         break;
       case HaulerState.Repairing:
         if (creep.store.getFreeCapacity() === creep.store.getCapacity()) {
-          creep.memory.state = HaulerState.Collecting;
+          creep.memory.state = HaulerState.Transferring;
         } else {
           const needsRepair = creep.room.find(FIND_STRUCTURES, {
             filter: structure => {
               switch (structure.structureType) {
                 case STRUCTURE_ROAD:
+                case STRUCTURE_CONTAINER:
                   return structure.hits < structure.hitsMax;
                 default:
-                  return "my" in structure && structure.my && structure.hits < structure.hitsMax;
+                  return false;
               }
             }
           });
@@ -92,6 +95,25 @@ export class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   private executeHaulerState(creep: HaulerCreep): void {
+    const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
+      filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
+    });
+    if (skCreep) {
+      creep.fleeFrom([skCreep], 6);
+      return;
+    }
+    const skLair = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, {
+      filter: sk =>
+        sk.structureType === STRUCTURE_KEEPER_LAIR &&
+        creep.pos.getRangeTo(sk) < 6 &&
+        sk.ticksToSpawn &&
+        sk.ticksToSpawn < 10
+    });
+
+    if (skLair) {
+      creep.fleeFrom([skLair], 6);
+      return;
+    }
     switch (creep.memory.state) {
       case HaulerState.Transferring:
         this.doTransfer(creep);
@@ -113,7 +135,6 @@ export class HaulerService extends ABaseService<HaulerCreep> {
       filter: structure => {
         switch (structure.structureType) {
           case STRUCTURE_ROAD:
-            return structure.hits < structure.hitsMax;
           case STRUCTURE_CONTAINER:
             return structure.hits < structure.hitsMax;
           default:
@@ -121,7 +142,6 @@ export class HaulerService extends ABaseService<HaulerCreep> {
         }
       }
     });
-
     if (!needsRepair) return;
     this.actionOrMove(creep, () => creep.repair(needsRepair), needsRepair);
   }
@@ -132,50 +152,47 @@ export class HaulerService extends ABaseService<HaulerCreep> {
 
     if (!originRoom) return;
 
-    const [target] = originRoom.find(FIND_STRUCTURES, {
+    if (creep.room.name !== originRoom.name) {
+      this.move(creep, spawn);
+      return;
+    }
+
+    const target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
       filter: structure => {
         switch (structure.structureType) {
-          // case STRUCTURE_CONTAINER:
-          // case STRUCTURE_EXTENSION:
-          // case STRUCTURE_SPAWN:
-          // case STRUCTURE_LAB:
-          //   return (
-          //     creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-          //   );
-          // case STRUCTURE_TERMINAL:
-          //   const terminalId = creep.room.terminal?.id;
-          //   const transaction = global.getTransaction(terminalId);
-          //   if (!transaction) return false;
-          //   return structure.store.getUsedCapacity(RESOURCE_ENERGY) < transaction.energyNeeded;
+          case STRUCTURE_LINK:
+            return (
+              creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+            );
           case STRUCTURE_STORAGE:
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
 
-          case STRUCTURE_TOWER:
-            return (
-              structure.store.getFreeCapacity(RESOURCE_ENERGY) > creep.store.getUsedCapacity(RESOURCE_ENERGY) &&
-              creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
-            );
           default:
             return false;
         }
       }
     });
 
-    if (!target) {
-      const [buildStructure] = originRoom.find(FIND_CONSTRUCTION_SITES);
-      if (buildStructure) {
-        this.actionOrMove(creep, () => creep.build(buildStructure), buildStructure);
-      } else if (originRoom.controller) {
-        this.actionOrMove(creep, () => creep.upgradeController(originRoom.controller!), originRoom.controller);
-      }
-      return;
-    }
+    if (!target) return;
 
-    this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
+    // if (!target) {
+    //   const [buildStructure] = originRoom.find(FIND_CONSTRUCTION_SITES);
+    //   if (buildStructure) {
+    //     this.actionOrMove(creep, () => creep.build(buildStructure), buildStructure);
+    //   } else if (originRoom.controller) {
+    //     this.actionOrMove(creep, () => creep.upgradeController(originRoom.controller!), originRoom.controller);
+    //   }
+    //   return;
+    // }
+
+    for (const resourceType in creep.store) {
+      this.actionOrMove(creep, () => creep.transfer(target, resourceType as ResourceConstant), target);
+    }
   }
 
   private doCollect(creep: HaulerCreep): void {
-    const target: any = creep.memory.containerTargetId && Game.getObjectById(creep.memory.containerTargetId);
+    const target: StructureContainer | null = (creep.memory.containerTargetId &&
+      Game.getObjectById(creep.memory.containerTargetId)) as any;
     if (!target) {
       const haulerFlag = findFlag(FlagType.HaulerContainer);
       if (haulerFlag) {
@@ -183,8 +200,31 @@ export class HaulerService extends ABaseService<HaulerCreep> {
       }
       return;
     }
-    this.actionOrMove(creep, () => creep.withdraw(target, RESOURCE_ENERGY), target);
+
+    const droppedResource = target.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+      filter: resource => resource.resourceType === RESOURCE_ENERGY && resource.pos.getRangeTo(target) < 4
+    });
+    if (droppedResource) {
+      this.actionOrMove(creep, () => creep.pickup(droppedResource), droppedResource);
+      return;
+    }
+
+    const tombstone = target.pos.findClosestByRange(FIND_TOMBSTONES, {
+      filter: tomb => Object.keys(tomb.store).length > 0 && tomb.pos.getRangeTo(target) < 4
+    });
+
+    if (tombstone) {
+      for (const resourceType in tombstone.store) {
+        this.actionOrMove(creep, () => creep.withdraw(tombstone, resourceType as ResourceConstant), tombstone);
+      }
+      return;
+    }
+
+    for (const resourceType in target.store) {
+      this.actionOrMove(creep, () => creep.withdraw(target, resourceType as ResourceConstant), target);
+    }
   }
 }
+profiler.registerClass(HaulerService, "HaulerService");
 
 export const haulerService = new HaulerService(haulerRepository, findRepository);

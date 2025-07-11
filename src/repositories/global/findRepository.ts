@@ -8,7 +8,7 @@ import {
   transporterRepository
 } from "repositories/creeps";
 import { roomServiceConfig } from "services/roomServiceConfig";
-import { getMaxCreepsPerTarget, getVisibleFlaggedRooms } from "utils";
+import { findFlags, getMaxCreepsPerTarget, getVisibleFlaggedRooms } from "utils";
 
 export type THaulerContainer = StructureContainer | StructureLink;
 export type THarvesterSource = Source | Mineral;
@@ -89,37 +89,68 @@ export class FindRepository implements IFindRepository {
   }
 
   findAvailableHarvesterSources() {
+    // const sourcesCount = this.harvesterRepository.countCreepsBySource();
+    // const rooms = getVisibleFlaggedRooms(FlagType.Harvest);
+
+    // const sources = rooms.flatMap(room =>
+    //   room.find(FIND_SOURCES, {
+    //     filter: source => {
+    //       const count = sourcesCount[source.id] ?? 0;
+    //       const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, source);
+    //       return count < maxCreeps;
+    //     }
+    //   })
+    // );
+
+    // const minerals = rooms.flatMap(room =>
+    //   room.find(FIND_MINERALS, {
+    //     filter: mineral => {
+    //       if (mineral.mineralAmount === 0) return false;
+
+    //       const extractor = mineral.pos
+    //         .lookFor(LOOK_STRUCTURES)
+    //         .find(structure => structure.structureType === STRUCTURE_EXTRACTOR);
+
+    //       if (!extractor) return false;
+
+    //       const count = sourcesCount[mineral.id] || 0;
+    //       const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, extractor);
+
+    //       return count < maxCreeps;
+    //     }
+    //   })
+    // );
+
+    // return [...sources, ...minerals];
+
     const sourcesCount = this.harvesterRepository.countCreepsBySource();
-    const rooms = getVisibleFlaggedRooms(FlagType.Harvest);
 
-    const sources = rooms.flatMap(room =>
-      room.find(FIND_SOURCES, {
-        filter: source => {
-          const count = sourcesCount[source.id] ?? 0;
-          const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, source);
-          return count < maxCreeps;
-        }
-      })
-    );
+    const sources = findFlags(FlagType.Harvest)
+      .map(flag => flag.room && (flag.pos.lookFor(LOOK_SOURCES)[0] as Source))
+      .filter(source => !!source)
+      .filter((source: any) => {
+        const count = sourcesCount[source.id] ?? 0;
+        const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, source);
+        return count < maxCreeps;
+      }) as Source[];
 
-    const minerals = rooms.flatMap(room =>
-      room.find(FIND_MINERALS, {
-        filter: mineral => {
-          if (mineral.mineralAmount === 0) return false;
+    const minerals = findFlags(FlagType.Harvest)
+      .map(flag => flag.room && (flag.pos.lookFor(LOOK_MINERALS)[0] as Mineral))
+      .filter(mineral => !!mineral)
+      .filter((mineral: any) => {
+        if (mineral.mineralAmount === 0) return false;
 
-          const extractor = mineral.pos
-            .lookFor(LOOK_STRUCTURES)
-            .find(structure => structure.structureType === STRUCTURE_EXTRACTOR);
+        const extractor = mineral.pos
+          .lookFor(LOOK_STRUCTURES)
+          .find((structure: any) => structure.structureType === STRUCTURE_EXTRACTOR);
 
-          if (!extractor) return false;
+        if (!extractor) return false;
 
-          const count = sourcesCount[mineral.id] || 0;
-          const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, extractor);
+        const count = sourcesCount[mineral.id] || 0;
+        const maxCreeps = getMaxCreepsPerTarget(CreepRole.Harvester, extractor);
 
-          return count < maxCreeps;
-        }
-      })
-    );
+        return count < maxCreeps;
+      }) as Mineral[];
 
     return [...sources, ...minerals];
   }

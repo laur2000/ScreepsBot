@@ -9,9 +9,13 @@ import { transporterController } from "./transporterController";
 import { decoyController } from "./decoyController";
 import { rangerController } from "./rangerController";
 import { healerController } from "./healerController";
+import { boyscoutController } from "./boyscoutController";
+import { patrolerController } from "./patrolerController";
+import profiler from "utils/profiler";
 
 class CreepsController implements IController {
   run(): void {
+    boyscoutController.run();
     builderController.run();
     claimerController.run();
     decoyController.run();
@@ -19,10 +23,12 @@ class CreepsController implements IController {
     healerController.run();
     harvesterController.run();
     haulerController.run();
+    patrolerController.run();
     reserverController.run();
     soldierController.run();
     transporterController.run();
   }
 }
+profiler.registerClass(CreepsController, "CreepsController");
 
 export const creepsController = new CreepsController();

@@ -1,6 +1,7 @@
 import { IController } from "controllers";
 import { garbageCollectorController } from "./garbageCollectorController";
 import { pixelController } from "./pixelController";
+import profiler from "utils/profiler";
 
 class GlobalController implements IController {
   run(): void {
@@ -34,5 +35,6 @@ class GlobalController implements IController {
     }
   }
 }
+profiler.registerClass(GlobalController, "GlobalController");
 
 export const globalController = new GlobalController();

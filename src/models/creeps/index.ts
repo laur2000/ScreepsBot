@@ -1,3 +1,4 @@
+export * from "./boyscoutModel";
 export * from "./builderModel";
 export * from "./claimerModel";
 export * from "./creepModel";
@@ -5,6 +6,7 @@ export * from "./decoyModel";
 export * from "./harvesterModel";
 export * from "./haulerModel";
 export * from "./healerModel";
+export * from "./patrolerModel";
 export * from "./rangerModel";
 export * from "./reserverModel";
 export * from "./soldierModel";

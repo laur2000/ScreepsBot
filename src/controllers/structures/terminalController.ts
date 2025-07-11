@@ -1,4 +1,5 @@
 import { IController } from "controllers";
+import profiler from "utils/profiler";
 
 class TerminalController implements IController {
   run(): void {
@@ -27,4 +28,6 @@ class TerminalController implements IController {
     }
   }
 }
+profiler.registerClass(TerminalController, "TerminalController");
+
 export const terminalController = new TerminalController();

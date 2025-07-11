@@ -2,6 +2,8 @@ import { claimerRepository, IClaimerRepository } from "repositories";
 import { findFlag, getUniqueId, recordCountToArray } from "utils";
 import { ClaimerCreep, ClaimerMemory, ClaimerState, CreepBodyPart, CreepRole, FlagType } from "models";
 import { ABaseService, TSpawnCreepResponse } from "services";
+import profiler from "utils/profiler";
+
 class ClaimerService extends ABaseService<ClaimerCreep> {
   MIN_CREEPS_TTL = 60;
   public constructor(private claimerRepository: IClaimerRepository) {
@@ -64,6 +66,13 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
   }
 
   private executeClaimerState(creep: ClaimerCreep): void {
+    const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
+      filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
+    });
+    if (skCreep) {
+      creep.fleeFrom([skCreep], 6);
+      return;
+    }
     switch (creep.memory.state) {
       case ClaimerState.Collecting:
         this.doCollect(creep);
@@ -119,5 +128,6 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
     this.actionOrMove(creep, () => creep.claimController(controller), controller);
   }
 }
+profiler.registerClass(ClaimerService, "ClaimerService");
 
 export const claimerService = new ClaimerService(claimerRepository);

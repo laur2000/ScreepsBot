@@ -1,4 +1,5 @@
 import { IController } from "controllers";
+import profiler from "utils/profiler";
 
 
 class GarbageCollectorController implements IController {
@@ -25,4 +26,6 @@ class GarbageCollectorController implements IController {
     });
   }
 }
+profiler.registerClass(GarbageCollectorController, "GarbageCollectorController");
+
 export const garbageCollectorController = new GarbageCollectorController();

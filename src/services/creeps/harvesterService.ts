@@ -8,13 +8,14 @@ import {
 } from "repositories";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
 import { calculateBodyCost, getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
+import profiler from "utils/profiler";
 
 export class HarvesterService extends ABaseService<HarvesterCreep> {
   constructor(private harvesterRepository: IHarvesterRepository, private findRepository: IFindRepository) {
     super(harvesterRepository);
   }
   MAX_CREEPS_PER_SOURCE = 2;
-  MIN_CREEPS_TTL = 60;
+  MIN_CREEPS_TTL = 120;
 
   needMoreCreeps(): boolean {
     return this.findRepository.findAvailableHarvesterSources().length > 0;
@@ -29,9 +30,10 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
   }
 
   override spawn(): TSpawnCreepResponse {
-    const name = `harvester-${getUniqueId()}`;
     const harvesterSources = this.findRepository.findAvailableHarvesterSources();
     for (const harvesterSource of harvesterSources) {
+      const name = `harvester-${harvesterSource.room?.name}-${getUniqueId()}`;
+
       const { body, energy } = this.getBodyNeededForSource(harvesterSource);
       const closestAvailableSpawn = this.findRepository.findClosestAvailableSpawnOfTarget(harvesterSource, energy);
       if (!closestAvailableSpawn) return ERR_BUSY;
@@ -78,6 +80,25 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
   }
 
   private executeHarvesterState(creep: HarvesterCreep): void {
+    const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
+      filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
+    });
+    if (skCreep) {
+      creep.fleeFrom([skCreep], 6);
+      return;
+    }
+    const skLair = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, {
+      filter: sk =>
+        sk.structureType === STRUCTURE_KEEPER_LAIR &&
+        creep.pos.getRangeTo(sk) < 6 &&
+        sk.ticksToSpawn &&
+        sk.ticksToSpawn < 20
+    });
+
+    if (skLair) {
+      creep.fleeFrom([skLair], 6);
+      return;
+    }
     switch (creep.memory.state) {
       case HarvesterState.Harvesting:
         this.doHarvest(creep);
@@ -86,9 +107,11 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
         this.doTransfer(creep);
         break;
       case HarvesterState.Recycling:
-        if (creep.store.getFreeCapacity() < 3) {
+        if ((creep.ticksToLive ?? 0) < 10) {
           this.doTransfer(creep);
-        } else if (creep.store.getFreeCapacity() === creep.store.getCapacity()) {
+        } else if (creep.store.getFreeCapacity() < 3) {
+          this.doTransfer(creep);
+        } else {
           this.doHarvest(creep);
         }
         break;
@@ -108,20 +131,22 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
         const distance = creep.pos.getRangeTo(structure);
         if (distance > 4) return false;
         switch (structure.structureType) {
-          case STRUCTURE_CONTAINER:
+          case STRUCTURE_CONTAINER: {
             return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+          }
           case STRUCTURE_LINK:
             return (
               structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
             );
 
           // case STRUCTURE_CONTROLLER:
-          //   return structure.my;
+          //   return structure.my && structure.level < 6;
           default:
             return false;
         }
       }
     });
+
     if (!target) return;
 
     if (target.hits < target.hitsMax && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
@@ -129,12 +154,14 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
       return;
     }
 
-    if (creep.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0) {
-      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_HYDROGEN), target);
-    } else {
-      this.actionOrMove(creep, () => creep.transfer(target, RESOURCE_ENERGY), target);
+    for (const resourceType in creep.store) {
+      if (creep.store[resourceType as ResourceConstant] > 0) {
+        this.actionOrMove(creep, () => creep.transfer(target, resourceType as ResourceConstant), target);
+        return;
+      }
     }
   }
 }
+profiler.registerClass(HarvesterService, "HarvesterService");
 
 export const harvesterService = new HarvesterService(harvesterRepository, findRepository);

@@ -16,18 +16,18 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
       useBoost: false
     },
     builder: {
-      maxCreeps: 6,
+      maxCreeps: 1,
       bodyParts: { [CreepBodyPart.Work]: 10, [CreepBodyPart.Carry]: 10, [CreepBodyPart.Move]: 10 },
       useBoost: false
     },
     transporter: {
-      maxCreeps: 2,
-      bodyParts: { [CreepBodyPart.Carry]: 16, [CreepBodyPart.Move]: 8 },
+      maxCreeps: 1,
+      bodyParts: { [CreepBodyPart.Carry]: 20, [CreepBodyPart.Move]: 10 },
       useBoost: false
     },
     hauler: {
       maxCreepsPerSource: 1,
-      bodyParts: { [CreepBodyPart.Carry]: 20, [CreepBodyPart.Move]: 20 },
+      bodyParts: { [CreepBodyPart.Carry]: 15, [CreepBodyPart.Move]: 15 },
       useBoost: false
     },
     soldier: {
@@ -37,8 +37,8 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
     reserver: {
       maxCreepsPerSource: 1,
       bodyParts: {
-        [CreepBodyPart.Claim]: 2,
-        [CreepBodyPart.Move]: 2
+        [CreepBodyPart.Claim]: 4,
+        [CreepBodyPart.Move]: 4
       },
       useBoost: false
     }
@@ -50,13 +50,13 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
       useBoost: false
     },
     builder: {
-      maxCreeps: 1,
-      bodyParts: { [CreepBodyPart.Work]: 2, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 3 },
+      maxCreeps: 2,
+      bodyParts: { [CreepBodyPart.Work]: 5, [CreepBodyPart.Carry]: 5, [CreepBodyPart.Move]: 5 },
       useBoost: false
     },
     transporter: {
       maxCreeps: 2,
-      bodyParts: { [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 2 },
+      bodyParts: { [CreepBodyPart.Carry]: 8, [CreepBodyPart.Move]: 4 },
       useBoost: false
     },
     hauler: {
@@ -152,19 +152,7 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
       useBoost: false
     }
   },
-  W9S35: {
-    harvester: {
-      maxCreepsPerSource: 1,
-      bodyParts: { [CreepBodyPart.Work]: 8, [CreepBodyPart.Carry]: 1, [CreepBodyPart.Move]: 8 },
-      useBoost: false
-    },
-    hauler: {
-      maxCreepsPerSource: 2,
-      bodyParts: { [CreepBodyPart.Carry]: 15, [CreepBodyPart.Move]: 15 },
-      useBoost: false
-    }
-  },
-  W9S36: {
+  W8S34: {
     harvester: {
       maxCreepsPerSource: 1,
       bodyParts: { [CreepBodyPart.Work]: 6, [CreepBodyPart.Carry]: 1, [CreepBodyPart.Move]: 6 },
@@ -173,6 +161,52 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
     hauler: {
       maxCreepsPerSource: 2,
       bodyParts: { [CreepBodyPart.Carry]: 15, [CreepBodyPart.Move]: 15 },
+      useBoost: false
+    }
+  },
+  W9S35: {
+    harvester: {
+      maxCreepsPerSource: 1,
+      bodyParts: { [CreepBodyPart.Work]: 8, [CreepBodyPart.Carry]: 1, [CreepBodyPart.Move]: 8 },
+      useBoost: false
+    },
+    hauler: {
+      maxCreepsPerSource: 1,
+      bodyParts: { [CreepBodyPart.Carry]: 15, [CreepBodyPart.Move]: 15 },
+      useBoost: false
+    }
+  },
+  W9S36: {
+    harvester: {
+      maxCreepsPerSource: 1,
+      bodyParts: { [CreepBodyPart.Work]: 8, [CreepBodyPart.Carry]: 1, [CreepBodyPart.Move]: 2 },
+      useBoost: false
+    },
+    hauler: {
+      maxCreepsPerSource: 2,
+      bodyParts: { [CreepBodyPart.Carry]: 15, [CreepBodyPart.Move]: 15 },
+      useBoost: false
+    },
+    builder: {
+      maxCreeps: 4,
+      bodyParts: { [CreepBodyPart.Work]: 4, [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 4 },
+      useBoost: false
+    },
+    transporter: {
+      maxCreeps: 1,
+      bodyParts: { [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 2 },
+      useBoost: false
+    }
+  },
+  W6S35: {
+    harvester: {
+      maxCreepsPerSource: 1,
+      bodyParts: { [CreepBodyPart.Work]: 12, [CreepBodyPart.Carry]: 1, [CreepBodyPart.Move]: 7 },
+      useBoost: false
+    },
+    hauler: {
+      maxCreepsPerSource: 3,
+      bodyParts: { [CreepBodyPart.Work]: 1, [CreepBodyPart.Carry]: 15, [CreepBodyPart.Move]: 15 },
       useBoost: false
     }
   },

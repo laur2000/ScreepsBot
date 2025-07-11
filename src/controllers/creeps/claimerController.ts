@@ -1,6 +1,7 @@
 import { IController } from "controllers";
 import { ClaimerCreep } from "models";
 import { claimerService, IService } from "services";
+import profiler from "utils/profiler";
 
 class ClaimerController implements IController {
   public constructor(private claimerService: IService<ClaimerCreep>) {}
@@ -16,5 +17,6 @@ class ClaimerController implements IController {
     }
   }
 }
+profiler.registerClass(ClaimerController, "ClaimerController");
 
 export const claimerController = new ClaimerController(claimerService);

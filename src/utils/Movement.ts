@@ -755,3 +755,40 @@ export default /******/ (function (modules) {
     /******/
   ]
 );
+
+export function actionOrMove<T extends Creep>(
+  creep: T,
+  action: () => ScreepsReturnCode,
+  target: RoomPosition | HasPos
+): ScreepsReturnCode {
+  const result = action();
+
+  if (result === ERR_NOT_IN_RANGE) {
+    creep.travelTo(target);
+    return OK;
+  }
+  return result;
+}
+
+Creep.prototype.kiteAttack = function (target: AnyCreep) {
+  this.rangedAttack(target);
+
+  const distance = this.pos.getRangeTo(target);
+  if (distance < 3) {
+    this.fleeFrom([target], 3);
+  } else if (distance > 3) {
+    this.moveTo(target, { range: 3 });
+  }
+};
+
+Creep.prototype.healClosestAlly = function () {
+  const ally = this.pos.findClosestByRange(FIND_MY_CREEPS, {
+    filter: creep => creep.hits < creep.hitsMax && this.pos.getRangeTo(creep) < 6
+  });
+  if (ally) {
+    const err = this.heal(ally);
+    if (err === ERR_NOT_IN_RANGE) {
+      this.moveTo(ally);
+    }
+  }
+};

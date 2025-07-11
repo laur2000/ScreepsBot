@@ -2,6 +2,8 @@ import { CreepRole, FlagType, ReserverCreep, ReserverMemory, ReserverState } fro
 import { reserverRepository, IReserverRepository } from "repositories";
 import { roomServiceConfig, ABaseService, TSpawnCreepResponse, USER_NAME } from "services";
 import { findFlags, getUniqueId, isMyUsername, recordCountToArray } from "utils";
+import profiler from "utils/profiler";
+
 class ReserverService extends ABaseService<ReserverCreep> {
   MIN_CREEPS_TTL = 60;
   MAX_CREEPS_PER_SOURCE = 1;
@@ -22,7 +24,7 @@ class ReserverService extends ABaseService<ReserverCreep> {
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
     const harvesterName = `reserver-${spawn.name}-${getUniqueId()}`;
 
-    const { reserver } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+    const reserver = roomServiceConfig[spawn.room.name]?.reserver || roomServiceConfig.default.reserver;
     const target = this.getAvailableTarget();
     if (!target) return ERR_BUSY;
     const res = spawn.spawnCreep(recordCountToArray(reserver!.bodyParts), harvesterName, {
@@ -72,7 +74,7 @@ class ReserverService extends ABaseService<ReserverCreep> {
 
       const controller = room.controller;
 
-      if (!controller || (controller.reservation?.ticksToEnd || 0) > 3000) return false;
+      if (!controller || (controller.reservation?.ticksToEnd || 0) > 1000) return false;
       return true;
     });
     return availableTargets[0] || null;
@@ -121,5 +123,6 @@ class ReserverService extends ABaseService<ReserverCreep> {
     }
   }
 }
+profiler.registerClass(ReserverService, "ReserverService");
 
 export const reserverService = new ReserverService(reserverRepository);

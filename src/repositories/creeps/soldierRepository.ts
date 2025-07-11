@@ -1,6 +1,6 @@
 import { CreepRole, FlagType, SoldierCreep } from "models";
 import { IRepository } from "repositories";
-import { findFlags } from "utils";
+import { findFlags, getVisibleFlaggedRooms } from "utils";
 
 export interface ISoldierRepository extends IRepository<SoldierCreep> {
   countEnemiesInRooms(): number;
@@ -20,10 +20,7 @@ export class SoldierRepository implements ISoldierRepository {
   }
 
   countEnemiesInRooms(): number {
-    const defendFlags = findFlags(FlagType.Defend);
-    const defendRooms = Object.values(Game.rooms).filter(room =>
-      defendFlags.find(flag => flag.pos.roomName === room.name)
-    );
+    const defendRooms = getVisibleFlaggedRooms(FlagType.Defend);
     const hostileCreeps = defendRooms.reduce((acc, room) => acc + room.find(FIND_HOSTILE_CREEPS).length, 0);
 
     const invaderCore = defendRooms.reduce(

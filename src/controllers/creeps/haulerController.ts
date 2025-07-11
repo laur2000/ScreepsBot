@@ -1,5 +1,6 @@
 import { IController } from "controllers";
 import { haulerService, HaulerService } from "services";
+import profiler from "utils/profiler";
 
 class HaulerController implements IController {
   constructor(private haulerService: HaulerService) {}
@@ -15,5 +16,6 @@ class HaulerController implements IController {
     }
   }
 }
+profiler.registerClass(HaulerController, "HaulerController");
 
 export const haulerController = new HaulerController(haulerService);

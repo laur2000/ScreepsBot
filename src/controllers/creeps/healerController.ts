@@ -2,6 +2,8 @@ import { IController } from "controllers";
 import { CreepRole, FlagType, HealerCreep, HealerMemory, HealerState } from "models";
 import { findFlag, getUniqueId } from "utils";
 import "utils/Movement";
+import profiler from "utils/profiler";
+
 class HealerController implements IController {
   constructor() {}
   run(): void {
@@ -15,12 +17,11 @@ class HealerController implements IController {
       const spawn = Object.values(Game.spawns)[0];
       if (!spawn) return;
 
+      RESOURCE_CATALYZED_GHODIUM_ALKALIDE
       spawn.spawnCreep(
         [
           TOUGH,
-          TOUGH,
-          TOUGH,
-          TOUGH,  // 120 catalyzed ghodium alkalide
+          TOUGH,  // 60 catalyzed ghodium alkalide
           MOVE,
           MOVE,
           MOVE, // 120 catalyzed zynthium alkalide
@@ -41,11 +42,11 @@ class HealerController implements IController {
       );
     } else {
       creeps.forEach(x => (x.memory.state = HealerState.Healing));
-      const lab = Game.getObjectById("685e21e3aed1553d572f40be") as StructureLab | undefined;
-      if (lab) {
-        lab.boostCreep(creeps[0]);
-        lab.boostCreep(creeps[1]);
-      }
+      // const lab = Game.getObjectById("68603ad225bbf972127e05e5") as StructureLab | undefined;
+      // if (lab) {
+      //   lab.boostCreep(creeps[0]);
+      //   lab.boostCreep(creeps[1]);
+      // }
     }
 
     creeps.filter(x => x.memory.state === HealerState.Healing).forEach(x => this.heal(x));
@@ -86,5 +87,6 @@ class HealerController implements IController {
     return result;
   }
 }
+profiler.registerClass(HealerController, "HealerController");
 
 export const healerController = new HealerController();

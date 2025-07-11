@@ -1,6 +1,7 @@
 import { IController } from "controllers";
 import { ReserverCreep } from "models";
 import { IService, reserverService } from "services";
+import profiler from "utils/profiler";
 
 
 class ReserverController implements IController {
@@ -17,5 +18,6 @@ class ReserverController implements IController {
     }
   }
 }
+profiler.registerClass(ReserverController, "ReserverController");
 
 export const reserverController = new ReserverController(reserverService);

@@ -3,6 +3,7 @@ import { ISoldierRepository, soldierRepository } from "repositories";
 import { roomServiceConfig } from "services/roomServiceConfig";
 import { ABaseService, TSpawnCreepResponse } from "services";
 import { getUniqueId, recordCountToArray } from "utils";
+import profiler from "utils/profiler";
 
 class SoldierService extends ABaseService<SoldierCreep> {
   MIN_CREEPS_TTL = 60;
@@ -18,12 +19,12 @@ class SoldierService extends ABaseService<SoldierCreep> {
   override needMoreCreeps(spawn: StructureSpawn): boolean {
     const creepCount = this.soldierRepository.countCreepsInSpawn(spawn.id);
     const enemiesCount = this.soldierRepository.countEnemiesInRooms();
-    return false;
+    return creepCount < enemiesCount;
   }
 
   override spawn(spawn: StructureSpawn): TSpawnCreepResponse {
     const harvesterName = `soldier-${spawn.name}-${getUniqueId()}`;
-    const { soldier } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
+    const soldier = roomServiceConfig[spawn.room.name].soldier || roomServiceConfig.default.soldier;
 
     const res = spawn.spawnCreep(recordCountToArray(soldier!.bodyParts), harvesterName, {
       memory: { role: CreepRole.Soldier, spawnId: spawn.id, state: SoldierState.Attacking } as SoldierMemory
@@ -81,5 +82,6 @@ class SoldierService extends ABaseService<SoldierCreep> {
     this.actionOrMove(creep, () => creep.attack(enemy!), enemy);
   }
 }
+profiler.registerClass(SoldierService, "SoldierService");
 
 export const soldierService = new SoldierService(soldierRepository);

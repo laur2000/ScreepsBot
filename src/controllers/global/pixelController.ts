@@ -1,4 +1,5 @@
 import { IController } from "controllers";
+import profiler from "utils/profiler";
 
 class PixelController implements IController {
   run(): void {
@@ -7,4 +8,6 @@ class PixelController implements IController {
     }
   }
 }
+profiler.registerClass(PixelController, "PixelController");
+
 export const pixelController = new PixelController();

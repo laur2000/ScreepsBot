@@ -11,5 +11,9 @@ export enum FlagType {
   Heal = "heal",
   Stay = "stay",
   Lab = "lab",
-  Reaction = "reaction"
+  Reaction = "reaction",
+  Reverse = "reverse",
+  Output = "output",
+  SK = "sk",
+  Scout = "scout"
 }

@@ -1,6 +1,7 @@
 import { IController } from "controllers";
 import { BuilderCreep } from "models";
 import { builderService, IService } from "services";
+import profiler from "utils/profiler";
 
 class BuilderController implements IController {
   public constructor(private builderService: IService<BuilderCreep>) {}
@@ -16,5 +17,6 @@ class BuilderController implements IController {
     }
   }
 }
+profiler.registerClass(BuilderController, "BuilderController");
 
 export const builderController = new BuilderController(builderService);

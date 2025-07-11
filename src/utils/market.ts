@@ -11,6 +11,14 @@ declare global {
         resourceType?: MarketResourceConstant;
       }): IOrder[];
       getTransaction(terminalId?: string): ITransaction | null;
+      getInfoByTradeVolume(args: {
+        minVolume?: number;
+        maxVolume?: number;
+        minAvgPrice?: number;
+        maxAvgPrice?: number;
+        limit?: number;
+      }): IInfoTradeVolume[];
+      InterShardMemory: any;
     }
   }
 }
@@ -34,6 +42,46 @@ global.getOrders = function ({ roomName, limit, ord = "asc", orderType, resource
       const unitPrice = (order.remainingAmount * order.price) / (order.remainingAmount - transferCost);
       return { ...order, realUnitPrice: unitPrice, totalTransactionCost: transferCost };
     });
+};
+
+interface IInfoTradeVolume {
+  resourceType: MarketResourceConstant;
+  totalTradeVolume: number;
+  totalVolume: number;
+  avgPrice: number;
+}
+
+global.getInfoByTradeVolume = function ({ minVolume, maxVolume, maxAvgPrice, minAvgPrice, limit }) {
+  const avgHistoricData = Game.market.getHistory().reduce((acc, data) => {
+    if (!acc[data.resourceType]) {
+      acc[data.resourceType] = {
+        resourceType: data.resourceType,
+        totalTradeVolume: 0,
+        totalVolume: 0,
+        avgPrice: 0
+      };
+    }
+
+    const { totalVolume, avgPrice } = acc[data.resourceType];
+
+    acc[data.resourceType].totalVolume = totalVolume + data.volume;
+    acc[data.resourceType].avgPrice =
+      (avgPrice * totalVolume + data.avgPrice * data.volume) / (totalVolume + data.volume);
+    acc[data.resourceType].totalTradeVolume = acc[data.resourceType].totalVolume * acc[data.resourceType].avgPrice;
+
+    return acc;
+  }, {} as Record<MarketResourceConstant, IInfoTradeVolume>);
+
+  return Object.values(avgHistoricData)
+    .sort((a, b) => b.totalTradeVolume - a.totalTradeVolume)
+    .filter(info => {
+      if (minVolume && info.totalVolume < minVolume) return false;
+      if (maxVolume && info.totalVolume > maxVolume) return false;
+      if (minAvgPrice && info.avgPrice < minAvgPrice) return false;
+      if (maxAvgPrice && info.avgPrice > maxAvgPrice) return false;
+      return true;
+    })
+    .slice(0, limit);
 };
 
 global.buyCheapestEnergy = function (roomName: string, amount: number, maxUnitPrice?: number) {

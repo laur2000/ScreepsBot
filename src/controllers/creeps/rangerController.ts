@@ -2,6 +2,8 @@ import { IController } from "controllers";
 import { CreepRole, FlagType, RangerCreep, RangerMemory, RangerState } from "models";
 import { doRecycle, findFlag, getUniqueId } from "utils";
 import "utils/Movement";
+import profiler from "utils/profiler";
+
 class RangerController implements IController {
   constructor() {}
   run(): void {
@@ -20,6 +22,46 @@ class RangerController implements IController {
       //   memory: { role: CreepRole.Ranger, spawnId: spawn.id, state: RangerState.Idle } as RangerMemory
       // });
 
+      // spawn.spawnCreep(
+      //   [
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     ATTACK,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE,
+      //     MOVE
+      //   ],
+      //   name,
+      //   {
+      //     memory: { role: CreepRole.Ranger, spawnId: spawn.id, state: RangerState.Idle } as RangerMemory
+      //   }
+      // );
       spawn.spawnCreep(
         [
           ATTACK,
@@ -162,5 +204,6 @@ class RangerController implements IController {
     return result;
   }
 }
+profiler.registerClass(RangerController, "RangerController");
 
 export const rangerController = new RangerController();

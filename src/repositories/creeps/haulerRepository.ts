@@ -26,15 +26,13 @@ export class HaulerRepository implements IHaulerRepository {
   }
 
   countCreepsByTargetId() {
-    return Object.values(Game.creeps)
-      .filter(creep => creep.memory.role === CreepRole.Hauler)
-      .reduce((acc, creep) => {
-        const targetId = creep.memory.containerTargetId;
-        if (!targetId) return acc;
+    return this.getAllCreeps().reduce((acc, creep) => {
+      const targetId = creep.memory.containerTargetId;
+      if (!targetId) return acc;
 
-        acc[targetId] = (acc[targetId] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      acc[targetId] = (acc[targetId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
   }
 }
 

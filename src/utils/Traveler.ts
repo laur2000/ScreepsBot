@@ -695,5 +695,16 @@ const STATE_DEST_ROOMNAME = 6;
 
 // assigns a function to Creep.prototype: creep.travelTo(destination)
 Creep.prototype.travelTo = function (destination: RoomPosition | { pos: RoomPosition }, options?: TravelToOptions) {
-  return Traveler.travelTo(this, destination, options);
+  const opts = options || {};
+  const obstacles = [];
+  for (let i = 0; i < 50; i++) {
+    obstacles.push({ pos: new RoomPosition(i, 0, "W7S35") });
+  }
+  if (opts.obstacles) {
+    opts.obstacles.push(...obstacles);
+  } else {
+    opts.obstacles = obstacles;
+  }
+
+  return Traveler.travelTo(this, destination, opts);
 };

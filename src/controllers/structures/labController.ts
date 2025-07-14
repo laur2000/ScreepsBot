@@ -17,7 +17,7 @@ class LabController implements IController {
           .find(structure => structure.structureType === STRUCTURE_LAB) as StructureLab;
         const [_, mineral1, mineral2] = flag.name.split(",");
 
-        const sourceLabs = getLabs();
+        const sourceLabs = getLabs(flag.room?.name);
         const sourceLab1 = sourceLabs.find(({ mineral }) => mineral === mineral1)?.lab;
         const sourceLab2 = sourceLabs.find(({ mineral }) => mineral === mineral2)?.lab;
         if (!outputLab || !sourceLab1 || !sourceLab2) return null;
@@ -55,6 +55,7 @@ class LabController implements IController {
 
   private runReactions() {
     const reactions = this.getReactions();
+
     for (const { outputLab, sourceLab1, sourceLab2 } of reactions) {
       outputLab.runReaction(sourceLab1, sourceLab2);
     }

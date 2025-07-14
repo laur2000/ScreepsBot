@@ -2,11 +2,12 @@ import { IController } from "controllers";
 import { garbageCollectorController } from "./garbageCollectorController";
 import { pixelController } from "./pixelController";
 import profiler from "utils/profiler";
+import { tryRun } from "utils";
 
 class GlobalController implements IController {
   run(): void {
-    garbageCollectorController.run();
-    pixelController.run();
+    tryRun(() => garbageCollectorController.run());
+    tryRun(() => pixelController.run());
     for (const room of Object.values(Game.rooms)) {
       const terminal = room.terminal;
       if (terminal) {

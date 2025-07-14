@@ -113,8 +113,10 @@ export function findFlag(flagType: FlagType): Flag | null {
   return Object.values(Game.flags).find(flag => flag.name.startsWith(flagType)) ?? null;
 }
 
-export function findFlags(flagType: FlagType): Flag[] {
-  return Object.values(Game.flags).filter(flag => flag.name.startsWith(flagType));
+export function findFlags(flagType: FlagType, roomName?: string): Flag[] {
+  return Object.values(Game.flags).filter(
+    flag => flag.name.startsWith(flagType) && (!roomName || flag.room?.name === roomName)
+  );
 }
 
 export function getCreepConfigPerRoom(role: CreepRole, room: Room) {
@@ -125,6 +127,14 @@ export function getCreepConfigPerRoom(role: CreepRole, room: Room) {
 export function getLabs(roomName?: string) {
   return getLabsBy({ roomName, flagType: FlagType.Lab });
 }
+
+export const tryRun = (fn: () => void) => {
+  try {
+    fn();
+  } catch (e) {
+    console.log(e);
+  }
+};
 
 export function getLabsBy({ roomName, flagType }: { roomName?: string; flagType: FlagType }) {
   return findFlags(flagType)

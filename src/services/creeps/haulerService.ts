@@ -95,6 +95,7 @@ export class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   private executeHaulerState(creep: HaulerCreep): void {
+
     const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
       filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
     });
@@ -191,7 +192,21 @@ export class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   private doCollect(creep: HaulerCreep): void {
-    const target: StructureContainer | null = (creep.memory.containerTargetId &&
+    const droppedResource2 = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+      filter: resource => resource.resourceType === RESOURCE_POWER
+    });
+    if (droppedResource2) {
+      this.actionOrMove(creep, () => creep.pickup(droppedResource2), droppedResource2);
+      return;
+    }
+    const ruin = creep.pos.findClosestByRange(FIND_RUINS, {
+      filter: ruin => ruin.store.getUsedCapacity(RESOURCE_POWER) > 0
+    });
+    if (ruin) {
+      this.actionOrMove(creep, () => creep.withdraw(ruin, RESOURCE_POWER), ruin);
+      return;
+    }
+    const target: StructureContainer | StructurePowerBank | null = (creep.memory.containerTargetId &&
       Game.getObjectById(creep.memory.containerTargetId)) as any;
     if (!target) {
       const haulerFlag = findFlag(FlagType.HaulerContainer);
@@ -206,6 +221,11 @@ export class HaulerService extends ABaseService<HaulerCreep> {
     });
     if (droppedResource) {
       this.actionOrMove(creep, () => creep.pickup(droppedResource), droppedResource);
+      return;
+    }
+
+    if (target.structureType === STRUCTURE_POWER_BANK) {
+      creep.moveTo(target);
       return;
     }
 

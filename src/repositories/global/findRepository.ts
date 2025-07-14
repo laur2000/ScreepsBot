@@ -12,7 +12,7 @@ import { findFlags, getMaxCreepsPerTarget, getVisibleFlaggedRooms } from "utils"
 
 export type THaulerContainer = StructureContainer | StructureLink;
 export type THarvesterSource = Source | Mineral;
-export type TTarget = _HasId & HasPos;
+export type TTarget = (_HasId | { id: string }) & HasPos;
 
 export interface IFindRepository {
   findAvailableContainers(room: Room, max: number): StructureContainer[];
@@ -72,6 +72,10 @@ export class FindRepository implements IFindRepository {
               const linkMemory = Memory.links?.[structure.id] || {};
               if (!linkMemory.isContainer) return false;
               break;
+            case STRUCTURE_POWER_BANK:
+              const shortLive = structure.hits / structure.hitsMax < 0.5;
+              if (!shortLive) return false;
+              break;
             default:
               return false;
           }
@@ -82,6 +86,7 @@ export class FindRepository implements IFindRepository {
           const count = containersCount[structure.id] || 0;
           Memory.containers = Memory.containers || {};
           const maxCount = Memory.containers?.[structure.id]?.maxCreeps ?? max;
+
           return count < maxCount;
         }
       })

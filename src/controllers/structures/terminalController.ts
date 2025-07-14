@@ -6,6 +6,7 @@ class TerminalController implements IController {
     for (const terminalId in Memory.terminals) {
       const transactions = Memory.terminals[terminalId].transactions;
       const terminal = Game.getObjectById(terminalId) as StructureTerminal;
+      if (!terminal) continue;
       for (const transaction of transactions) {
         const order = Game.market.getOrderById(transaction.orderId);
 

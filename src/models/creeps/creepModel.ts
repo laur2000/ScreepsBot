@@ -10,6 +10,8 @@ export enum CreepRole {
   Ranger = "ranger",
   Decoy = "decoy",
   Healer = "healer",
+  PowerHarvester = "power_harvester",
+  PowerHealer = "power_healer",
   Patroler = "patroler",
   Boyscout = "boyscout"
 }

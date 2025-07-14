@@ -7,6 +7,7 @@ export * from "./harvesterModel";
 export * from "./haulerModel";
 export * from "./healerModel";
 export * from "./patrolerModel";
+export * from "./powerHarvesterModel";
 export * from "./rangerModel";
 export * from "./reserverModel";
 export * from "./soldierModel";

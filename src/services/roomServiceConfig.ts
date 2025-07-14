@@ -77,6 +77,26 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
       useBoost: false
     }
   },
+  W10S35: {
+    hauler: {
+      maxCreepsPerSource: 5,
+      bodyParts: {
+        [CreepBodyPart.Carry]: 30,
+        [CreepBodyPart.Move]: 15
+      },
+      useBoost: false
+    }
+  },
+  W10S36: {
+    hauler: {
+      maxCreepsPerSource: 3,
+      bodyParts: {
+        [CreepBodyPart.Carry]: 30,
+        [CreepBodyPart.Move]: 15
+      },
+      useBoost: false
+    }
+  },
   W7S34: {
     hauler: {
       maxCreepsPerSource: 1,

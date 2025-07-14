@@ -1,3 +1,5 @@
+import { tryRun } from "utils";
+import { factoryController } from "./factoryController";
 import { labController } from "./labController";
 import { linkController } from "./linkController";
 import { terminalController } from "./terminalController";
@@ -6,10 +8,11 @@ import profiler from "utils/profiler";
 
 class StructuresController {
   run() {
-    linkController.run();
-    terminalController.run();
-    turretController.run();
-    labController.run();
+    tryRun(() => linkController.run());
+    tryRun(() => terminalController.run());
+    tryRun(() => turretController.run());
+    tryRun(() => labController.run());
+    tryRun(() => factoryController.run());
   }
 }
 profiler.registerClass(StructuresController, "StructuresController");

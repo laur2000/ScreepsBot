@@ -2,6 +2,7 @@ import { CreepRole, FlagType, TransporterCreep, TransporterMemory, TransporterSt
 import { findRepository, IFindRepository, ITransporterRepository, transporterRepository } from "repositories";
 import { ABaseService, TSpawnCreepResponse, roomServiceConfig } from "services";
 import { findFlag, findFlags, getLabs, getLabsBy, getUniqueId, recordCountToArray } from "utils";
+import { CacheFor } from "utils/cache";
 import profiler from "utils/profiler";
 
 class TransporterService extends ABaseService<TransporterCreep> {
@@ -12,7 +13,6 @@ class TransporterService extends ABaseService<TransporterCreep> {
   }
 
   override execute(transporter: TransporterCreep): void {
-    // this.runReactions();
     this.updateTransporterState(transporter);
     this.executeTransporterState(transporter);
   }
@@ -74,7 +74,13 @@ class TransporterService extends ABaseService<TransporterCreep> {
         this.doCollect(creep);
         break;
       case TransporterState.Recycling:
-        this.doRecycle(creep);
+        if ((creep.ticksToLive ?? 0) < 10) {
+          this.doTransfer(creep);
+        } else if (creep.store.getFreeCapacity() < 3) {
+          this.doTransfer(creep);
+        } else {
+          this.doTransfer(creep);
+        }
         break;
     }
   }
@@ -144,7 +150,7 @@ class TransporterService extends ABaseService<TransporterCreep> {
     return target || null;
   }
   private doTransfer(creep: TransporterCreep): void {
-    const transportRequest = this.getTransportRequest(creep);
+    const transportRequest = this.getTransportRequest(creep.room.name);
 
     if (transportRequest && creep.store.getUsedCapacity(transportRequest.resource) > 0) {
       this.actionOrMove(
@@ -239,8 +245,9 @@ class TransporterService extends ABaseService<TransporterCreep> {
     return mySellOrders as Order[];
   }
 
-  private getTransportRequest(creep: TransporterCreep) {
-    const transportFlags = findFlags(FlagType.Transport, creep.room.name);
+  @CacheFor(10)
+  private getTransportRequest(roomName: string) {
+    const transportFlags = findFlags(FlagType.Transport, roomName);
 
     for (const flag of transportFlags) {
       const [_, resource, amount] = flag.name.split(",") as [string, ResourceConstant, number];
@@ -307,20 +314,21 @@ class TransporterService extends ABaseService<TransporterCreep> {
       return;
     }
 
-    const transportRequest = this.getTransportRequest(creep);
+    const transportRequest = this.getTransportRequest(creep.room.name);
     if (transportRequest) {
       const collectTarget = creep.pos.findClosestByRange(FIND_STRUCTURES, {
         filter: structure => {
           if (structure.id === transportRequest.target.id) return false;
           switch (structure.structureType) {
-            case STRUCTURE_STORAGE:
             case STRUCTURE_TERMINAL:
+            case STRUCTURE_STORAGE:
             case STRUCTURE_LINK:
             case STRUCTURE_CONTAINER:
             case STRUCTURE_FACTORY:
             case STRUCTURE_LAB:
               const usedAmount = structure.store.getUsedCapacity(transportRequest.resource) || 0;
               return usedAmount > 0;
+
             default:
               return false;
           }
@@ -357,7 +365,7 @@ class TransporterService extends ABaseService<TransporterCreep> {
         for (const mineral in labA.store) {
           if (mineral === RESOURCE_ENERGY) continue;
 
-          if (labA.store.getUsedCapacity(mineral as ResourceConstant)! < 100) continue;
+          if (labA.store.getUsedCapacity(mineral as ResourceConstant)! < creep.store.getCapacity()) continue;
 
           this.actionOrMove(creep, () => creep.withdraw(labA, mineral as ResourceConstant), labA);
           return;
@@ -458,8 +466,9 @@ class TransporterService extends ABaseService<TransporterCreep> {
       const [storage] = creep.room.find(FIND_STRUCTURES, {
         filter: structure => {
           switch (structure.structureType) {
-            case STRUCTURE_STORAGE:
             case STRUCTURE_TERMINAL:
+              if (resource === RESOURCE_ENERGY) return false;
+            case STRUCTURE_STORAGE:
               return structure.store.getUsedCapacity(resource) > 0;
             default:
               return false;
@@ -478,6 +487,7 @@ class TransporterService extends ABaseService<TransporterCreep> {
           case STRUCTURE_LINK:
             const isContainer = Memory.links?.[structure.id]?.isContainer ?? false;
             if (!isContainer) return false;
+            return structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
           case STRUCTURE_CONTAINER:
             for (const r in structure.store) {
               const resource = r as ResourceConstant;
@@ -493,8 +503,11 @@ class TransporterService extends ABaseService<TransporterCreep> {
     }) as StructureLink | StructureContainer | null;
 
     const tombstone = creep.pos.findClosestByRange(FIND_TOMBSTONES, {
-      filter: tombstone =>
-        tombstone.store.getUsedCapacity(RESOURCE_ENERGY) > 0 || tombstone.store.getUsedCapacity(RESOURCE_HYDROGEN) > 0
+      filter: tombstone => {
+        if (tombstone.pos.getRangeTo(creep) > 3) return false;
+
+        return Object.keys(tombstone.store).length >= 0;
+      }
     });
 
     const droppedResource = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES);

@@ -9,9 +9,13 @@ class PowerHarvesterController implements IController {
     this.spawnCreeps();
 
     // this.moveToFlag();
-    // this.boostPowerHarvester();
+
+    this.boostPowerHarvester();
+
     this.doHeal();
     this.doHarvest();
+
+    // this.doAttack();
   }
 
   moveToFlag() {
@@ -22,7 +26,7 @@ class PowerHarvesterController implements IController {
     for (const creep of creeps) {
       const flag = Game.flags[creep.memory.flagName];
       if (!flag) continue;
-      creep.moveTo(flag.pos);
+      creep.travelTo(flag.pos);
     }
   }
 
@@ -32,15 +36,49 @@ class PowerHarvesterController implements IController {
     for (const powerHarvester of powerHarvesters) {
       const flag = Game.flags[powerHarvester.memory.flagName];
       if (!flag) continue;
-
       const powerBank = flag.pos.lookFor(LOOK_STRUCTURES).find(x => x.structureType === STRUCTURE_POWER_BANK);
       if (!powerBank) continue;
       if (powerHarvester.hits < powerHarvester.hitsMax) continue;
-    //   powerHarvester.moveTo(powerBank);
-      powerHarvester.attack(powerBank);
+
+      // if (flag.name === "power1" && powerBank.hits < 2000) continue;
+
+      const err = powerHarvester.attack(powerBank);
+      if (err == ERR_NOT_IN_RANGE) powerHarvester.moveTo(powerBank);
     }
   }
 
+  doAttack() {
+    const powerHarvesters = Object.values(Game.creeps).filter(x => x.memory.role === CreepRole.PowerHarvester);
+
+    for (const powerHarvester of powerHarvesters) {
+      const flag = Game.flags[powerHarvester.memory.flagName];
+      if (!flag) continue;
+
+      const hostileHealCreep = powerHarvester.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
+        filter: hostile => {
+          return hostile.getActiveBodyparts(HEAL) > 0;
+        }
+      });
+
+      if (hostileHealCreep) {
+        const err = powerHarvester.attack(hostileHealCreep);
+        if (err == ERR_NOT_IN_RANGE) powerHarvester.moveTo(hostileHealCreep);
+        return;
+      }
+
+      const attackerCreep = powerHarvester.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
+        filter: hostile => {
+          return hostile.getActiveBodyparts(ATTACK) > 0;
+        }
+      });
+
+      if (attackerCreep) {
+        const err = powerHarvester.attack(attackerCreep);
+        if (err == ERR_NOT_IN_RANGE) powerHarvester.moveTo(attackerCreep);
+        return;
+      }
+    }
+  }
   doHeal() {
     const powerHealers = Object.values(Game.creeps).filter(x => x.memory.role === CreepRole.PowerHealer);
 

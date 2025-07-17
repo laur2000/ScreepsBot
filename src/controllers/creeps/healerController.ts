@@ -17,11 +17,11 @@ class HealerController implements IController {
       const spawn = Object.values(Game.spawns)[0];
       if (!spawn) return;
 
-      RESOURCE_CATALYZED_GHODIUM_ALKALIDE
+      RESOURCE_CATALYZED_GHODIUM_ALKALIDE;
       spawn.spawnCreep(
         [
           TOUGH,
-          TOUGH,  // 60 catalyzed ghodium alkalide
+          TOUGH, // 60 catalyzed ghodium alkalide
           MOVE,
           MOVE,
           MOVE, // 120 catalyzed zynthium alkalide
@@ -78,12 +78,12 @@ class HealerController implements IController {
   }
 
   actionOrMove(creep: HealerCreep, action: () => ScreepsReturnCode, target: RoomPosition | HasPos): ScreepsReturnCode {
-    const result = action();
-
-    if (result === ERR_NOT_IN_RANGE) {
+    if (creep.pos.getRangeTo(target) > 1) {
       creep.travelTo(target);
       return OK;
     }
+    const result = action();
+
     return result;
   }
 }

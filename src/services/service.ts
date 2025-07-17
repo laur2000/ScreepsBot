@@ -35,7 +35,7 @@ export abstract class ABaseService<T extends Creep> implements IService<T> {
   protected actionOrMove(creep: T, action: () => ScreepsReturnCode, target: RoomPosition | HasPos): ScreepsReturnCode {
     const result = action();
 
-    if (result === ERR_NOT_IN_RANGE) {
+    if (result) {
       this.move(creep, target);
     }
     return result;

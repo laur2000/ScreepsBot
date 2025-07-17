@@ -240,7 +240,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
     }
 
     const tombstone = creep.pos.findClosestByRange(FIND_TOMBSTONES, {
-      filter: tombstone => tombstone.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+      filter: tombstone => tombstone.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && tombstone.pos.getRangeTo(creep) < 3
     });
 
     if (tombstone) {

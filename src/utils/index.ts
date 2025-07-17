@@ -119,6 +119,13 @@ export function findFlags(flagType: FlagType, roomName?: string): Flag[] {
   );
 }
 
+export function measureCpu(fn: () => void, label: string) {
+  const startCpu = Game.cpu.getUsed();
+  fn();
+  const cpuUsed = Game.cpu.getUsed() - startCpu;
+  console.log(`${label}: ${cpuUsed}`);
+}
+
 export function getCreepConfigPerRoom(role: CreepRole, room: Room) {
   const config = roomServiceConfig[room.name]?.[role] || roomServiceConfig.default[role];
   return config as RoomServiceConfig;

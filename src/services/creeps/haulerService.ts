@@ -95,7 +95,18 @@ export class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   private executeHaulerState(creep: HaulerCreep): void {
-
+    const moveFlag = findFlag("move" as any);
+    if (
+      moveFlag &&
+      (creep.memory.containerTargetId === "68763a56c17041ba9f4f06e4" ||
+        creep.memory.containerTargetId === "6876549573213fcd6f867c79")
+    ) {
+      creep.travelTo(moveFlag);
+      if (creep.pos.getRangeTo(moveFlag) < 2) {
+        moveFlag.remove();
+      }
+      return;
+    }
     const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
       filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
     });
@@ -198,7 +209,11 @@ export class HaulerService extends ABaseService<HaulerCreep> {
     if (droppedResource2) {
       this.actionOrMove(creep, () => creep.pickup(droppedResource2), droppedResource2);
       return;
+    } else if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+      creep.memory.state = HaulerState.Transferring;
+      return;
     }
+
     const ruin = creep.pos.findClosestByRange(FIND_RUINS, {
       filter: ruin => ruin.store.getUsedCapacity(RESOURCE_POWER) > 0
     });

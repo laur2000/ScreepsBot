@@ -68,7 +68,7 @@ class SoldierService extends ABaseService<SoldierCreep> {
   private doAttack(creep: SoldierCreep): void {
     let enemy: AnyCreep | StructureInvaderCore | null = null;
     for (const room of Object.values(Game.rooms)) {
-      enemy = room.find(FIND_HOSTILE_CREEPS)[0];
+      enemy = room.find(FIND_HOSTILE_CREEPS, { filter: c => c.owner?.username !== "Source Keeper" })[0];
       if (enemy) break;
 
       enemy = room.find(FIND_HOSTILE_STRUCTURES, {

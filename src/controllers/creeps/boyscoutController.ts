@@ -2,6 +2,7 @@ import { IController } from "controllers";
 import { BoyscoutCreep, BoyscoutMemory, BoyscoutState, CreepRole, FlagType } from "models";
 import { spawnService } from "services/structures/spawnService";
 import { findFlags } from "utils";
+import { CacheFor } from "utils/cache";
 import profiler from "utils/profiler";
 
 const boyscoutBody = [MOVE];
@@ -13,6 +14,7 @@ class BoyscoutController implements IController {
     this.executeBoyscout();
   }
 
+  @CacheFor(10)
   getInvisibleRoomFlags() {
     const boyscoutCreeps = this.getBoyscoutCreeps();
     const scoutFlags = findFlags(FlagType.Scout).filter(
@@ -21,6 +23,7 @@ class BoyscoutController implements IController {
     return scoutFlags;
   }
 
+  @CacheFor(10)
   getBoyscoutCreeps() {
     return Object.values(Game.creeps).filter(creep => creep.memory.role === CreepRole.Boyscout) as BoyscoutCreep[];
   }

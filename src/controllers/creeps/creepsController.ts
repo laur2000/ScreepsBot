@@ -13,23 +13,23 @@ import { boyscoutController } from "./boyscoutController";
 import { patrolerController } from "./patrolerController";
 import profiler from "utils/profiler";
 import { powerHarvesterController } from "./powerHarvesterController";
-import { tryRun } from "utils";
+import { measureCpu, tryRun } from "utils";
 
 class CreepsController implements IController {
   run(): void {
-    tryRun(() => boyscoutController.run());
-    tryRun(() => builderController.run());
-    tryRun(() => claimerController.run());
-    tryRun(() => decoyController.run());
-    tryRun(() => rangerController.run());
-    tryRun(() => healerController.run());
-    tryRun(() => harvesterController.run());
-    tryRun(() => haulerController.run());
-    tryRun(() => patrolerController.run());
-    tryRun(() => powerHarvesterController.run());
-    tryRun(() => reserverController.run());
-    tryRun(() => soldierController.run());
-    tryRun(() => transporterController.run());
+    measureCpu(() => tryRun(() => boyscoutController.run()), "boyscoutController.run");
+    measureCpu(() => tryRun(() => builderController.run()), "builderController.run");
+    measureCpu(() => tryRun(() => claimerController.run()), "claimerController.run");
+    measureCpu(() => tryRun(() => decoyController.run()), "decoyController.run");
+    measureCpu(() => tryRun(() => rangerController.run()), "rangerController.run");
+    measureCpu(() => tryRun(() => healerController.run()), "healerController.run");
+    measureCpu(() => tryRun(() => harvesterController.run()), "harvesterController.run");
+    measureCpu(() => tryRun(() => haulerController.run()), "haulerController.run");
+    measureCpu(() => tryRun(() => patrolerController.run()), "patrolerController.run");
+    measureCpu(() => tryRun(() => powerHarvesterController.run()), "powerHarvesterController.run");
+    measureCpu(() => tryRun(() => reserverController.run()), "reserverController.run");
+    measureCpu(() => tryRun(() => soldierController.run()), "soldierController.run");
+    measureCpu(() => tryRun(() => transporterController.run()), "transporterController.run");
   }
 }
 profiler.registerClass(CreepsController, "CreepsController");

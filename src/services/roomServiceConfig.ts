@@ -31,7 +31,7 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
       useBoost: false
     },
     soldier: {
-      bodyParts: { [CreepBodyPart.Attack]: 15, [CreepBodyPart.Move]: 15 },
+      bodyParts: { [CreepBodyPart.Tough]: 5, [CreepBodyPart.Attack]: 5, [CreepBodyPart.Move]: 10 },
       useBoost: false
     },
     reserver: {
@@ -79,7 +79,37 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
   },
   W10S35: {
     hauler: {
-      maxCreepsPerSource: 5,
+      maxCreepsPerSource: 6,
+      bodyParts: {
+        [CreepBodyPart.Carry]: 30,
+        [CreepBodyPart.Move]: 15
+      },
+      useBoost: false
+    }
+  },
+  W9S40: {
+    hauler: {
+      maxCreepsPerSource: 0,
+      bodyParts: {
+        [CreepBodyPart.Carry]: 20,
+        [CreepBodyPart.Move]: 20
+      },
+      useBoost: false
+    }
+  },
+  W10S39: {
+    hauler: {
+      maxCreepsPerSource: 4,
+      bodyParts: {
+        [CreepBodyPart.Carry]: 20,
+        [CreepBodyPart.Move]: 20
+      },
+      useBoost: false
+    }
+  },
+  W10S31: {
+    hauler: {
+      maxCreepsPerSource: 4,
       bodyParts: {
         [CreepBodyPart.Carry]: 30,
         [CreepBodyPart.Move]: 15
@@ -88,6 +118,26 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
     }
   },
   W10S36: {
+    hauler: {
+      maxCreepsPerSource: 6,
+      bodyParts: {
+        [CreepBodyPart.Carry]: 20,
+        [CreepBodyPart.Move]: 20
+      },
+      useBoost: false
+    }
+  },
+  W10S32: {
+    hauler: {
+      maxCreepsPerSource: 3,
+      bodyParts: {
+        [CreepBodyPart.Carry]: 30,
+        [CreepBodyPart.Move]: 15
+      },
+      useBoost: false
+    }
+  },
+  W10S34: {
     hauler: {
       maxCreepsPerSource: 3,
       bodyParts: {
@@ -215,6 +265,10 @@ export const roomServiceConfig: Record<string, Partial<Record<CreepRole, RoomSer
     transporter: {
       maxCreeps: 1,
       bodyParts: { [CreepBodyPart.Carry]: 4, [CreepBodyPart.Move]: 2 },
+      useBoost: false
+    },
+    soldier: {
+      bodyParts: { [CreepBodyPart.Tough]: 6, [CreepBodyPart.Attack]: 3, [CreepBodyPart.Move]: 9 },
       useBoost: false
     }
   },

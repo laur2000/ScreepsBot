@@ -1,4 +1,4 @@
-import { CreepRole, TransporterCreep } from "models";
+import { CreepRole, TransporterCreep, TransporterState } from "models";
 import { IRepository } from "repositories";
 
 export interface ITransporterRepository extends IRepository<TransporterCreep> {
@@ -8,7 +8,10 @@ export interface ITransporterRepository extends IRepository<TransporterCreep> {
 export class TransporterRepository implements ITransporterRepository {
   countCreepsInSpawn(spawnId: string): number {
     return Object.values(Game.creeps).filter(
-      (creep: Creep) => creep.memory.role === CreepRole.Transporter && creep.memory.spawnId === spawnId
+      (creep: Creep) =>
+        creep.memory.role === CreepRole.Transporter &&
+        creep.memory.spawnId === spawnId &&
+        creep.memory.state !== TransporterState.Recycling
     ).length;
   }
 

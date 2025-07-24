@@ -14,7 +14,6 @@ class BoyscoutController implements IController {
     this.executeBoyscout();
   }
 
-  @CacheFor(10)
   getInvisibleRoomFlags() {
     const boyscoutCreeps = this.getBoyscoutCreeps();
     const scoutFlags = findFlags(FlagType.Scout).filter(
@@ -23,14 +22,12 @@ class BoyscoutController implements IController {
     return scoutFlags;
   }
 
-  @CacheFor(10)
   getBoyscoutCreeps() {
     return Object.values(Game.creeps).filter(creep => creep.memory.role === CreepRole.Boyscout) as BoyscoutCreep[];
   }
 
   spawnBoyscout() {
     const [flag] = this.getInvisibleRoomFlags();
-
     if (!flag) return;
 
     return spawnService.spawnClosestAvailable({
@@ -62,7 +59,7 @@ class BoyscoutController implements IController {
   doScout(creep: BoyscoutCreep) {
     const flag = Game.flags[creep.memory.targetFlag];
     if (!flag) return;
-    creep.moveTo(flag);
+    creep.travelTo(flag);
   }
 }
 

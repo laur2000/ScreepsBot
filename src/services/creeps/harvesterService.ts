@@ -7,7 +7,7 @@ import {
   THarvesterSource
 } from "repositories";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
-import { calculateBodyCost, getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
+import { calculateBodyCost, getCreepConfigPerRoom, getUniqueId, recordCountToArray, throttleTicks } from "utils";
 import profiler from "utils/profiler";
 
 export class HarvesterService extends ABaseService<HarvesterCreep> {
@@ -18,6 +18,7 @@ export class HarvesterService extends ABaseService<HarvesterCreep> {
   MIN_CREEPS_TTL = 120;
 
   needMoreCreeps(): boolean {
+    if (!throttleTicks(10)) return false;
     return this.findRepository.findAvailableHarvesterSources().length > 0;
   }
 

@@ -73,7 +73,7 @@ export class FindRepository implements IFindRepository {
               if (!linkMemory.isContainer) return false;
               break;
             case STRUCTURE_POWER_BANK:
-              const shortLive = structure.hits / structure.hitsMax < 1;
+              const shortLive = structure.hits / structure.hitsMax < 0.5;
               if (!shortLive) return false;
               break;
             default:

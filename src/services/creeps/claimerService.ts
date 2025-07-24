@@ -1,5 +1,5 @@
 import { claimerRepository, IClaimerRepository } from "repositories";
-import { findFlag, getUniqueId, recordCountToArray } from "utils";
+import { findFlag, getUniqueId, recordCountToArray, throttleTicks } from "utils";
 import { ClaimerCreep, ClaimerMemory, ClaimerState, CreepBodyPart, CreepRole, FlagType } from "models";
 import { ABaseService, TSpawnCreepResponse } from "services";
 import profiler from "utils/profiler";
@@ -16,6 +16,7 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
   }
 
   override needMoreCreeps(spawn: StructureSpawn): boolean {
+    if (!throttleTicks(10)) return false;
     const creepCount = this.claimerRepository.countCreepsInSpawn(spawn.id);
     const claimCount = this.claimerRepository.countClaimFlags();
     return creepCount < claimCount;
@@ -66,6 +67,14 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
   }
 
   private executeClaimerState(creep: ClaimerCreep): void {
+    const moveFlag = findFlag("move" as any);
+    if (moveFlag) {
+      creep.travelTo(moveFlag);
+      if (creep.pos.getRangeTo(moveFlag) < 2) {
+        // moveFlag.remove();
+      }
+      return;
+    }
     const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
       filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
     });
@@ -106,7 +115,7 @@ class ClaimerService extends ABaseService<ClaimerCreep> {
 
   private doUpgrade(creep: ClaimerCreep): void {
     const claimFlag = findFlag(FlagType.Claim);
-    const controller = claimFlag?.room?.controller;
+    const controller = claimFlag?.room?.controller || creep.room.controller;
     if (!controller) return;
     this.actionOrMove(creep, () => creep.upgradeController(controller), controller);
   }

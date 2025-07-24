@@ -180,7 +180,8 @@ export class Traveler {
    */
 
   public static checkAvoid(roomName: string) {
-    return Memory.rooms && Memory.rooms[roomName] && Memory.rooms[roomName].avoid;
+    const excludedRooms = ["W7S34", "W8S36", "W9S37", "W8S38", "W9S39", "W7S31"];
+    return excludedRooms.includes(roomName) || (Memory.rooms && Memory.rooms[roomName] && Memory.rooms[roomName].avoid);
   }
 
   /**
@@ -668,6 +669,7 @@ export class Traveler {
     if (state.lastCoord !== undefined) {
       if (this.sameCoord(creep.pos, state.lastCoord)) {
         // didn't move
+
         stuck = true;
       } else if (this.isExit(creep.pos) && this.isExit(state.lastCoord)) {
         // moved against exit
@@ -684,7 +686,7 @@ export class Traveler {
 const REPORT_CPU_THRESHOLD = 1000;
 
 const DEFAULT_MAXOPS = 20000;
-const DEFAULT_STUCK_VALUE = 2;
+const DEFAULT_STUCK_VALUE = 1;
 const STATE_PREV_X = 0;
 const STATE_PREV_Y = 1;
 const STATE_STUCK = 2;
@@ -696,15 +698,7 @@ const STATE_DEST_ROOMNAME = 6;
 // assigns a function to Creep.prototype: creep.travelTo(destination)
 Creep.prototype.travelTo = function (destination: RoomPosition | { pos: RoomPosition }, options?: TravelToOptions) {
   const opts = options || {};
-  const obstacles = [];
-  for (let i = 0; i < 50; i++) {
-    obstacles.push({ pos: new RoomPosition(i, 0, "W7S35") });
-  }
-  if (opts.obstacles) {
-    opts.obstacles.push(...obstacles);
-  } else {
-    opts.obstacles = obstacles;
-  }
 
+  opts.allowHostile = false;
   return Traveler.travelTo(this, destination, opts);
 };

@@ -63,14 +63,14 @@ class HealerController implements IController {
     const room = healerFlag.room?.name;
 
     if (creep.room.name !== room) {
-      creep.moveTo(healerFlag);
+      creep.travelTo(healerFlag);
       return;
     }
     const closestAlly = creep.pos.findClosestByRange(FIND_MY_CREEPS, {
       filter: creep => creep.hits < creep.hitsMax
     });
     if (!closestAlly) {
-      creep.moveTo(healerFlag);
+      creep.travelTo(healerFlag);
       return;
     }
 

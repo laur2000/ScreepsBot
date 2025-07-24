@@ -75,12 +75,12 @@ class DecoyController implements IController {
     const room = decoyFlag.room?.name;
 
     if (creep.room.name !== room) {
-      creep.moveTo(decoyFlag);
+      creep.travelTo(decoyFlag);
       return;
     }
     const closestHostile = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
     if (!closestHostile || creep.room.controller?.safeMode) {
-      creep.moveTo(decoyFlag);
+      creep.travelTo(decoyFlag);
       return;
     }
 

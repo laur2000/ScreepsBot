@@ -128,8 +128,6 @@ StructureLink.prototype.transferEnergy = function (target) {
 };
 
 export const loop = function () {
-  console.log("============");
-
   Memory.metrics = {
     harvest: 0,
     transfer: 0,
@@ -141,7 +139,8 @@ export const loop = function () {
     reverseReactions: 0,
     spawn: 0,
     tower: 0,
-    factory: 0
+    factory: 0,
+    callback: 0
   };
   const startLoop = Game.cpu.getUsed();
   profiler.wrap(function () {

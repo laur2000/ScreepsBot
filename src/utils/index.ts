@@ -94,6 +94,10 @@ Creep.prototype.findClosestByPriority = function (types, opts) {
   );
 };
 
+export function isTombstone(target: unknown): target is Tombstone {
+  return target instanceof Tombstone;
+}
+
 export function calculateBodyCost(body: BodyPartConstant[]) {
   return body.reduce((acc, part) => acc + BODYPART_COST[part], 0);
 }
@@ -123,7 +127,8 @@ export function measureCpu(fn: () => void, label: string) {
   const startCpu = Game.cpu.getUsed();
   fn();
   const cpuUsed = Game.cpu.getUsed() - startCpu;
-  console.log(`${label}: ${cpuUsed}`);
+  if (label.includes("run")) return;
+  console.log(`${label}: ${cpuUsed.toFixed(2)}`);
 }
 
 export function getCreepConfigPerRoom(role: CreepRole, room: Room) {
@@ -143,6 +148,9 @@ export const tryRun = (fn: () => void) => {
   }
 };
 
+export function throttleTicks(ticks: number) {
+  return Game.time % ticks === 0;
+}
 export function getLabsBy({ roomName, flagType }: { roomName?: string; flagType: FlagType }) {
   return findFlags(flagType)
     .filter(flag => (roomName ? flag.room?.name === roomName : true))

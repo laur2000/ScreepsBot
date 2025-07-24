@@ -1,5 +1,5 @@
 import { IRepository, builderRepository, findRepository, IFindRepository } from "repositories";
-import { findFlag, findFlags, getLabs, getUniqueId, recordCountToArray } from "utils";
+import { findFlag, findFlags, getLabs, getUniqueId, recordCountToArray, throttleTicks } from "utils";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
 import { BuilderCreep, BuilderMemory, BuilderState, CreepBodyPart, CreepRole, FlagType } from "models";
 import profiler from "utils/profiler";
@@ -17,6 +17,7 @@ class BuilderService extends ABaseService<BuilderCreep> {
   }
 
   override needMoreCreeps(spawn: StructureSpawn): boolean {
+    if (!throttleTicks(10)) return false;
     const { builder } = roomServiceConfig[spawn.room.name] || roomServiceConfig.default;
 
     const creepCount = this.builderRepository.countCreepsInSpawn(spawn.id);
@@ -97,7 +98,11 @@ class BuilderService extends ABaseService<BuilderCreep> {
         this.doCollect(creep);
         break;
       case BuilderState.Recycling:
-        this.doRecycle(creep);
+        if (creep.store.getFreeCapacity() === 0) {
+          this.doCollect(creep);
+        } else {
+          this.doBuild(creep);
+        }
         break;
     }
   }

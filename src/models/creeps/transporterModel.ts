@@ -15,4 +15,6 @@ export interface TransporterMemory {
   spawnId: string;
   state: TransporterState;
   containerTargetId?: string | null;
+  targetId?: string | null;
+  resource?: string | null;
 }

@@ -1,7 +1,7 @@
 import { CreepRole, FlagType, ReserverCreep, ReserverMemory, ReserverState } from "models";
 import { reserverRepository, IReserverRepository } from "repositories";
 import { roomServiceConfig, ABaseService, TSpawnCreepResponse, USER_NAME } from "services";
-import { findFlags, getUniqueId, isMyUsername, recordCountToArray } from "utils";
+import { findFlags, getUniqueId, isMyUsername, recordCountToArray, throttleTicks } from "utils";
 import profiler from "utils/profiler";
 
 class ReserverService extends ABaseService<ReserverCreep> {
@@ -17,6 +17,7 @@ class ReserverService extends ABaseService<ReserverCreep> {
   }
 
   override needMoreCreeps(spawn: StructureSpawn): boolean {
+    if (!throttleTicks(10)) return false;
     const target = this.getAvailableTarget();
     return !!target;
   }

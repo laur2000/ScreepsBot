@@ -1,4 +1,5 @@
 import { IController } from "controllers";
+import { towerRoomConfig } from "services";
 import profiler from "utils/profiler";
 
 class TurretController implements IController {
@@ -19,12 +20,17 @@ class TurretController implements IController {
           return !isRevenge;
         }
       });
+      const { wallMaxHits, rampartMaxHits } = towerRoomConfig[tower.room.name] || towerRoomConfig.default;
       const structures = tower.room.find(FIND_STRUCTURES, {
         filter: structure => {
-          const needsRepair = structure.hits < structure.hitsMax && structure.hits < 310000;
-          const isWall = structure.structureType === STRUCTURE_WALL;
-          const isRampart = structure.structureType === STRUCTURE_RAMPART;
-          return needsRepair && !isWall;
+          switch (structure.structureType) {
+            case STRUCTURE_RAMPART:
+              return structure.hits < rampartMaxHits;
+            case STRUCTURE_WALL:
+              return structure.hits < wallMaxHits;
+            default:
+              return structure.hits < structure.hitsMax;
+          }
         }
       });
 

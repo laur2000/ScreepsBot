@@ -132,7 +132,7 @@ class RangerController implements IController {
 
     const distance = creep.pos.getRangeTo(closestRampart);
     if (distance > 0) {
-      creep.moveTo(closestRampart);
+      creep.travelTo(closestRampart);
       return;
     }
     const closestEnemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
@@ -152,7 +152,7 @@ class RangerController implements IController {
     const room = rangeFlag.room?.name;
 
     if (creep.room.name !== room) {
-      creep.moveTo(rangeFlag);
+      creep.travelTo(rangeFlag);
       return;
     }
 
@@ -167,7 +167,7 @@ class RangerController implements IController {
       }
       return;
     } else {
-      creep.moveTo(rangeFlag);
+      creep.travelTo(rangeFlag);
       return;
     }
     // const closestHostile = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS);

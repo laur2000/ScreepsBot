@@ -10,6 +10,7 @@ declare global {
         orderType?: ORDER_BUY | ORDER_SELL;
         resourceType?: MarketResourceConstant;
       }): IOrder[];
+      printEnergy(roomName: string): void;
       getTransaction(terminalId?: string): ITransaction | null;
       getInfoByTradeVolume(args: {
         minVolume?: number;
@@ -95,6 +96,18 @@ global.buyCheapestEnergy = function (roomName: string, amount: number, maxUnitPr
   if (!order) return false;
   if (maxUnitPrice && order.realUnitPrice > maxUnitPrice) return false;
   return global.makeDeal(roomName, order.id, amount);
+};
+
+global.printEnergy = function (roomName: string) {
+  const orders = global.getOrders({
+    roomName,
+    limit: 5,
+    ord: "asc",
+    orderType: ORDER_SELL,
+    resourceType: RESOURCE_ENERGY
+  });
+
+  console.log(JSON.stringify(orders));
 };
 
 global.makeDeal = function (roomName: string, orderId: string, amount: number) {

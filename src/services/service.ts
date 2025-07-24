@@ -33,17 +33,20 @@ export abstract class ABaseService<T extends Creep> implements IService<T> {
   }
 
   protected actionOrMove(creep: T, action: () => ScreepsReturnCode, target: RoomPosition | HasPos): ScreepsReturnCode {
-    const result = action();
-
-    if (result) {
+    const dist = creep.pos.getRangeTo(target);
+    if (dist > 2) {
       this.move(creep, target);
+      return ERR_NOT_IN_RANGE;
+    } else if (dist === 2) {
+      this.move(creep, target);
+      return action();
     }
-    return result;
+    return action();
   }
 
-  protected move(creep: T, target: RoomPosition | HasPos): void {
+  protected move(creep: T, target: RoomPosition | HasPos, opts?: TravelToOptions): void {
     if (creep.fatigue === 0) {
-      creep.travelTo(target);
+      creep.travelTo(target, opts);
     }
   }
 

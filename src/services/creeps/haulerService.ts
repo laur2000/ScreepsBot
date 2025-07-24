@@ -1,7 +1,14 @@
 import { CreepRole, FlagType, HaulerCreep, HaulerMemory, HaulerState } from "models";
 import { findRepository, haulerRepository, IFindRepository, IHaulerRepository, THaulerContainer } from "repositories";
 import { ABaseService, roomServiceConfig, TSpawnCreepResponse } from "services";
-import { calculateBodyCost, findFlag, getCreepConfigPerRoom, getUniqueId, recordCountToArray } from "utils";
+import {
+  calculateBodyCost,
+  findFlag,
+  getCreepConfigPerRoom,
+  getUniqueId,
+  recordCountToArray,
+  throttleTicks
+} from "utils";
 import profiler from "utils/profiler";
 
 export class HaulerService extends ABaseService<HaulerCreep> {
@@ -18,6 +25,7 @@ export class HaulerService extends ABaseService<HaulerCreep> {
   }
 
   override needMoreCreeps(): boolean {
+    if (!throttleTicks(10)) return false;
     return this.findRepository.findAvailableHaulerContainers().length > 0;
   }
 
@@ -96,11 +104,7 @@ export class HaulerService extends ABaseService<HaulerCreep> {
 
   private executeHaulerState(creep: HaulerCreep): void {
     const moveFlag = findFlag("move" as any);
-    if (
-      moveFlag &&
-      (creep.memory.containerTargetId === "68763a56c17041ba9f4f06e4" ||
-        creep.memory.containerTargetId === "6876549573213fcd6f867c79")
-    ) {
+    if (moveFlag && creep.memory.containerTargetId === "688227c4c5c6373a546ad5a6") {
       creep.travelTo(moveFlag);
       if (creep.pos.getRangeTo(moveFlag) < 2) {
         moveFlag.remove();
@@ -108,16 +112,16 @@ export class HaulerService extends ABaseService<HaulerCreep> {
       return;
     }
     const skCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
-      filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 6
+      filter: (sk: Creep) => creep.pos.getRangeTo(sk) < 8
     });
     if (skCreep) {
-      creep.fleeFrom([skCreep], 6);
+      creep.fleeFrom([skCreep], 8);
       return;
     }
     const skLair = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, {
       filter: sk =>
         sk.structureType === STRUCTURE_KEEPER_LAIR &&
-        creep.pos.getRangeTo(sk) < 6 &&
+        creep.pos.getRangeTo(sk) < 8 &&
         sk.ticksToSpawn &&
         sk.ticksToSpawn < 10
     });
@@ -240,7 +244,7 @@ export class HaulerService extends ABaseService<HaulerCreep> {
     }
 
     if (target.structureType === STRUCTURE_POWER_BANK) {
-      creep.moveTo(target);
+      creep.travelTo(target);
       return;
     }
 

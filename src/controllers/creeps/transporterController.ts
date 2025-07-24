@@ -1,6 +1,7 @@
 import { IController } from "controllers";
 import { TransporterCreep } from "models";
 import { IService, transporterService } from "services";
+import { measureCpu } from "utils";
 import profiler from "utils/profiler";
 
 class TransporterController implements IController {

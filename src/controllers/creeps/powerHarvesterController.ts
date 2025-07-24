@@ -7,9 +7,7 @@ import { findFlags, getUniqueId, recordCountToArray } from "utils";
 class PowerHarvesterController implements IController {
   run(): void {
     this.spawnCreeps();
-
-    // this.moveToFlag();
-
+    this.moveToFlag();
     this.boostPowerHarvester();
 
     this.doHeal();
@@ -19,14 +17,22 @@ class PowerHarvesterController implements IController {
   }
 
   moveToFlag() {
-    const creeps = Object.values(Game.creeps).filter(
-      x => x.memory.role === CreepRole.PowerHarvester || x.memory.role === CreepRole.PowerHealer
-    );
+    const powerHarvesters = Object.values(Game.creeps).filter(x => x.memory.role === CreepRole.PowerHarvester);
 
-    for (const creep of creeps) {
-      const flag = Game.flags[creep.memory.flagName];
+    for (const powerHarvester of powerHarvesters) {
+      const flag = Game.flags[powerHarvester.memory.flagName];
       if (!flag) continue;
-      creep.travelTo(flag.pos);
+      if (powerHarvester.pos.getRangeTo(flag.pos) > 1) {
+        powerHarvester.travelTo(flag.pos, { range: 1 });
+      }
+    }
+
+    const powerHealer = Object.values(Game.creeps).find(x => x.memory.role === CreepRole.PowerHealer);
+    if (!powerHealer) return;
+    const flag = Game.flags[powerHealer.memory.flagName];
+    if (!flag) return;
+    if (powerHealer.pos.getRangeTo(flag.pos) > 2) {
+      powerHealer.travelTo(flag.pos, { range: 2 });
     }
   }
 
@@ -40,10 +46,10 @@ class PowerHarvesterController implements IController {
       if (!powerBank) continue;
       if (powerHarvester.hits < powerHarvester.hitsMax) continue;
 
-      // if (flag.name === "power1" && powerBank.hits < 2000) continue;
+      // if (flag.name === "power2" && powerBank.hits < 2000) continue;
 
       const err = powerHarvester.attack(powerBank);
-      if (err == ERR_NOT_IN_RANGE) powerHarvester.moveTo(powerBank);
+      if (err == ERR_NOT_IN_RANGE) powerHarvester.travelTo(powerBank);
     }
   }
 
@@ -62,7 +68,7 @@ class PowerHarvesterController implements IController {
 
       if (hostileHealCreep) {
         const err = powerHarvester.attack(hostileHealCreep);
-        if (err == ERR_NOT_IN_RANGE) powerHarvester.moveTo(hostileHealCreep);
+        if (err == ERR_NOT_IN_RANGE) powerHarvester.travelTo(hostileHealCreep);
         return;
       }
 
@@ -74,7 +80,7 @@ class PowerHarvesterController implements IController {
 
       if (attackerCreep) {
         const err = powerHarvester.attack(attackerCreep);
-        if (err == ERR_NOT_IN_RANGE) powerHarvester.moveTo(attackerCreep);
+        if (err == ERR_NOT_IN_RANGE) powerHarvester.travelTo(attackerCreep);
         return;
       }
     }
@@ -91,9 +97,10 @@ class PowerHarvesterController implements IController {
         x => x.memory.role === CreepRole.PowerHarvester && x.memory.flagName === powerHealer.memory.flagName
       );
 
+      // if (powerHealer.memory.flagName === "power2") continue;
       if (!powerHarvester) continue;
       const err = powerHealer.heal(powerHarvester);
-      if (err == ERR_NOT_IN_RANGE) powerHealer.moveTo(powerHarvester);
+      if (err == ERR_NOT_IN_RANGE) powerHealer.travelTo(powerHarvester);
     }
   }
 
@@ -104,7 +111,7 @@ class PowerHarvesterController implements IController {
     const lab1 = Game.getObjectById("68659e498391330212dd3a6c") as StructureLab;
 
     for (const powerHarvester of powerHarvesters1) {
-      powerHarvester.moveTo(lab1);
+      powerHarvester.travelTo(lab1);
       lab1.boostCreep(powerHarvester);
     }
 
@@ -114,7 +121,7 @@ class PowerHarvesterController implements IController {
     const lab2 = Game.getObjectById("6865a526ff4607ae13eebbb6") as StructureLab;
 
     for (const powerHarvester of powerHarvesters2) {
-      powerHarvester.moveTo(lab2);
+      powerHarvester.travelTo(lab2);
       lab2.boostCreep(powerHarvester);
     }
   }
